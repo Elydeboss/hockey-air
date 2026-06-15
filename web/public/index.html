@@ -60,6 +60,13 @@ canvas { display:block; touch-action:none; }
 #disconnect-overlay h2 { color:#f44; font-size:1.5rem; letter-spacing:3px; margin-bottom:.8rem; }
 #disconnect-overlay p { color:rgba(255,255,255,0.5); font-size:.85rem; margin-bottom:1.2rem; }
 </style>
+<script>
+  window.env = {
+    WS_SERVER: location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+      ? 'localhost:3000'
+      : 'your-app.onrender.com'
+  };
+</script>
 </head>
 <body>
 <canvas id="c"></canvas>
@@ -291,8 +298,9 @@ function goMode(m){
 // ─── Online Multiplayer ────────────────────────────────────────────
 function onlineConnect(onOpen) {
   if (ws && ws.readyState === WebSocket.OPEN) { if (onOpen) onOpen(); return; }
+  const host = window.env.WS_SERVER || 'localhost:3000';
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  ws = new WebSocket(`${proto}//${location.host}`);
+  ws = new WebSocket(`${proto}//${host}`);
   ws.onopen = () => { if (onOpen) onOpen(); };
   ws.onclose = () => {
     if (gameActive && mode === 'online') {
