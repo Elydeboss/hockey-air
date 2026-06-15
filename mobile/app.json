@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "Air Hockey",
+    "slug": "air-hockey",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#000"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.airhockey.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#000"
+      },
+      "package": "com.airhockey.app"
+    }
+  }
+}

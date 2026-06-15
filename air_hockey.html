@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,user-scalable=no"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: #000;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        font-family: monospace;
+      }
+      canvas {
+        display: block;
+        touch-action: none;
+      }
+      #overlay {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        color: #fff;
+        min-width: 300px;
+      }
+      #overlay h1 {
+        font-size: 1.8rem;
+        letter-spacing: 3px;
+        margin-bottom: 0.3rem;
+      }
+      .sub {
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 0.75rem;
+        letter-spacing: 2px;
+        margin-bottom: 1.4rem;
+      }
+      .mode-btn {
+        display: block;
+        width: 100%;
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        color: #fff;
+        padding: 12px 20px;
+        font-size: 0.9rem;
+        font-family: monospace;
+        cursor: pointer;
+        border-radius: 4px;
+        margin-bottom: 10px;
+        text-align: left;
+        transition: background 0.15s, border-color 0.15s;
+      }
+      .mode-btn:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.5);
+      }
+      .mode-btn span {
+        float: right;
+        color: rgba(255, 255, 255, 0.35);
+        font-size: 0.8rem;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 1.2rem;
+      }
+      .pick-btn {
+        flex: 1;
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.5);
+        padding: 10px 4px;
+        font-size: 0.78rem;
+        font-family: monospace;
+        cursor: pointer;
+        border-radius: 4px;
+        line-height: 1.6;
+      }
+      .pick-btn.active {
+        border-color: #ff0;
+        color: #ff0;
+        text-shadow: 0 0 8px #ff0;
+      }
+      .pick-btn:hover:not(.active) {
+        border-color: rgba(255, 255, 255, 0.4);
+        color: #fff;
+      }
+      .back-btn {
+        background: transparent;
+        border: none;
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 0.78rem;
+        font-family: monospace;
+        cursor: pointer;
+        margin-top: 0.4rem;
+      }
+      .back-btn:hover {
+        color: #fff;
+      }
+
+      #pause-overlay {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.72);
+      }
+      #pause-box {
+        text-align: center;
+        color: #fff;
+        min-width: 220px;
+      }
+      #pause-box h2 {
+        font-size: 1.5rem;
+        letter-spacing: 4px;
+        margin-bottom: 1.4rem;
+        color: #ff0;
+        text-shadow: 0 0 18px #ff0;
+      }
+      .pause-btn {
+        display: block;
+        width: 100%;
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        color: #fff;
+        padding: 11px 20px;
+        font-size: 0.9rem;
+        font-family: monospace;
+        cursor: pointer;
+        border-radius: 4px;
+        margin-bottom: 10px;
+        text-align: center;
+        transition: background 0.15s, border-color 0.15s;
+      }
+      .pause-btn:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.5);
+      }
+      .pause-btn.accent {
+        border-color: #0f0;
+        color: #0f0;
+        text-shadow: 0 0 8px #0f0;
+      }
+      .pause-btn.accent:hover {
+        background: rgba(0, 255, 0, 0.07);
+      }
+
+      #win-overlay {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        color: #fff;
+        display: none;
+      }
+      #win-overlay h1 {
+        font-size: 2rem;
+        margin-bottom: 0.6rem;
+      }
+      #win-overlay p {
+        color: rgba(255, 255, 255, 0.45);
+        font-size: 0.78rem;
+        margin-bottom: 1.4rem;
+        line-height: 1.8;
+      }
+      #win-overlay button {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        color: #fff;
+        padding: 10px 28px;
+        font-size: 0.9rem;
+        font-family: monospace;
+        cursor: pointer;
+        border-radius: 4px;
+        margin: 0 5px;
+      }
+      #win-overlay button:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+
+    <!-- Main menu -->
+    <div id="overlay">
+      <div id="screen-menu">
+        <h1>AIR HOCKEY</h1>
+        <div class="sub">NEON EDITION</div>
+        <button class="mode-btn" onclick="goMode('ai')">
+          VS Computer <span>1 Player</span>
+        </button>
+        <button class="mode-btn" onclick="goMode('2p')">
+          VS Player 2 <span>2 Players</span>
+        </button>
+      </div>
+      <div id="screen-mode" style="display: none">
+        <h1 style="font-size: 1.2rem; margin-bottom: 0.3rem">
+          SELECT DIFFICULTY
+        </h1>
+        <div class="sub">VS COMPUTER</div>
+        <div class="row">
+          <button class="pick-btn active" id="d-easy" onclick="setDiff('easy')">
+            EASY
+          </button>
+          <button class="pick-btn" id="d-medium" onclick="setDiff('medium')">
+            MEDIUM
+          </button>
+          <button class="pick-btn" id="d-hard" onclick="setDiff('hard')">
+            HARD
+          </button>
+          <button class="pick-btn" id="d-pro" onclick="setDiff('pro')">
+            PRO
+          </button>
+        </div>
+        <button class="mode-btn" onclick="showScreen('screen-layout')">
+          NEXT <span>Choose Layout →</span>
+        </button>
+        <br /><button class="back-btn" onclick="showScreen('screen-menu')">
+          ← Back
+        </button>
+      </div>
+      <div id="screen-layout" style="display: none">
+        <h1 style="font-size: 1.2rem; margin-bottom: 0.3rem">TABLE LAYOUT</h1>
+        <div class="sub">VS COMPUTER</div>
+        <div class="row">
+          <button
+            class="pick-btn active"
+            id="l-horizontal"
+            onclick="setLayout('horizontal')"
+            style="padding: 16px 4px"
+          >
+            ⬛ HORIZONTAL<br /><span style="font-size: 0.68rem; opacity: 0.5"
+              >Landscape</span
+            >
+          </button>
+          <button
+            class="pick-btn"
+            id="l-vertical"
+            onclick="setLayout('vertical')"
+            style="padding: 16px 4px"
+          >
+            ▬ VERTICAL<br /><span style="font-size: 0.68rem; opacity: 0.5"
+              >Portrait</span
+            >
+          </button>
+        </div>
+        <div class="row" style="justify-content: center; gap: 6px">
+          <span
+            style="
+              color: rgba(255, 255, 255, 0.3);
+              font-size: 0.7rem;
+              letter-spacing: 1px;
+              align-self: center;
+            "
+            >FIRST TO</span
+          >
+          <button
+            class="pick-btn active"
+            id="w-3"
+            onclick="setWinning(3)"
+            style="flex: 0; padding: 6px 12px; font-size: 0.78rem"
+          >
+            3
+          </button>
+          <button
+            class="pick-btn"
+            id="w-5"
+            onclick="setWinning(5)"
+            style="flex: 0; padding: 6px 12px; font-size: 0.78rem"
+          >
+            5
+          </button>
+          <button
+            class="pick-btn"
+            id="w-7"
+            onclick="setWinning(7)"
+            style="flex: 0; padding: 6px 12px; font-size: 0.78rem"
+          >
+            7
+          </button>
+          <button
+            class="pick-btn"
+            id="w-10"
+            onclick="setWinning(10)"
+            style="flex: 0; padding: 6px 12px; font-size: 0.78rem"
+          >
+            10
+          </button>
+        </div>
+        <button class="mode-btn" onclick="startGame()">
+          START GAME <span id="win-label">First to 7</span>
+        </button>
+        <br /><button class="back-btn" onclick="showScreen('screen-mode')">
+          ← Back
+        </button>
+      </div>
+      <div id="screen-layout-2p" style="display: none">
+        <h1 style="font-size: 1.2rem; margin-bottom: 0.3rem">TABLE LAYOUT</h1>
+        <div class="sub">2 PLAYERS</div>
+        <div class="row">
+          <button
+            class="pick-btn active"
+            id="l2-horizontal"
+            onclick="setLayout('horizontal')"
+            style="padding: 16px 4px"
+          >
+            ⬛ HORIZONTAL<br /><span style="font-size: 0.68rem; opacity: 0.5"
+              >Mouse vs WASD</span
+            >
+          </button>
+          <button
+            class="pick-btn"
+            id="l2-vertical"
+            onclick="setLayout('vertical')"
+            style="padding: 16px 4px"
+          >
+            ▬ VERTICAL<br /><span style="font-size: 0.68rem; opacity: 0.5"
+              >Mouse vs WASD</span
+            >
+          </button>
+        </div>
+        <div class="row" style="justify-content: center; gap: 6px">
+          <span
+            style="
+              color: rgba(255, 255, 255, 0.3);
+              font-size: 0.7rem;
+              letter-spacing: 1px;
+              align-self: center;
+            "
+            >FIRST TO</span
+          >
+          <button
+            class="pick-btn active"
+            id="w2-3"
+            onclick="setWinning(3)"
+            style="flex: 0; padding: 6px 12px; font-size: 0.78rem"
+          >
+            3
+          </button>
+          <button
+            class="pick-btn"
+            id="w2-5"
+            onclick="setWinning(5)"
+            style="flex: 0; padding: 6px 12px; font-size: 0.78rem"
+          >
+            5
+          </button>
+          <button
+            class="pick-btn"
+            id="w2-7"
+            onclick="setWinning(7)"
+            style="flex: 0; padding: 6px 12px; font-size: 0.78rem"
+          >
+            7
+          </button>
+          <button
+            class="pick-btn"
+            id="w2-10"
+            onclick="setWinning(10)"
+            style="flex: 0; padding: 6px 12px; font-size: 0.78rem"
+          >
+            10
+          </button>
+        </div>
+        <button class="mode-btn" onclick="startGame()">
+          START GAME <span id="win-label-2p">First to 7</span>
+        </button>
+        <br /><button class="back-btn" onclick="showScreen('screen-menu')">
+          ← Back
+        </button>
+      </div>
+    </div>
+
+    <!-- Pause overlay -->
+    <div id="pause-overlay">
+      <div id="pause-box">
+        <h2>PAUSED</h2>
+        <button class="pause-btn accent" onclick="resumeGame()">
+          ▶ Resume
+        </button>
+        <button class="pause-btn" onclick="restartGame()">↺ Restart</button>
+        <button class="pause-btn" onclick="mainMenu()">⌂ Main Menu</button>
+      </div>
+    </div>
+
+    <!-- Win screen -->
+    <div id="win-overlay">
+      <h1 id="win-text"></h1>
+      <p id="win-sub"></p>
+      <button onclick="rematch()">Rematch</button>
+      <button onclick="mainMenu()">Menu</button>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("c");
+      const ctx = canvas.getContext("2d");
+
+      let W, H, GOAL_SIZE, GOAL_POS;
+
+      // Tuning constants
+      const PUCK_R = 11,
+        MALLET_R = 28,
+        WALL = 6;
+      const FRICTION = 0.994,
+        MAX_SPEED = 22,
+        INIT_SPEED = 7,
+        KB_SPEED = 7;
+      const WALL_BOUNCE = 0.88,
+        MALLET_SMOOTH = 0.38,
+        AI_REACT_BASE = 0.7;
+      const MALLET_IMPULSE_SPEED = 2,
+        MALLET_IMPULSE_BASE = 2.5;
+
+      let WINNING = 7;
+      let score = [0, 0],
+        gameActive = false,
+        paused = false,
+        mode = "ai",
+        difficulty = "easy",
+        layout = "horizontal";
+      let puck = { x: 0, y: 0, vx: 0, vy: 0, r: PUCK_R },
+        trail = [],
+        sparks = [];
+      let lastHitter = -1; // -1 = none, 0 = P1/green, 1 = P2/red
+      let mallets = [
+        {
+          x: 0,
+          y: 0,
+          tx: 0,
+          ty: 0,
+          vx: 0,
+          vy: 0,
+          r: MALLET_R,
+          color: "#0f0",
+          glow: "#0f0",
+        },
+        {
+          x: 0,
+          y: 0,
+          tx: 0,
+          ty: 0,
+          vx: 0,
+          vy: 0,
+          r: MALLET_R,
+          color: "#f00",
+          glow: "#f00",
+        },
+      ];
+
+      // Goal announcement
+      let goalTimer = 0;
+      let goalColor = "#fff";
+      let pendingReset = -1; // who to serve to after goal flash
+
+      // Audio
+      let audioCtx = null;
+      function initAudio() {
+        if (!audioCtx) {
+          try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          } catch (e) {}
+        }
+      }
+      function playTone(freq, dur, type, vol) {
+        try {
+          initAudio();
+          if (!audioCtx) return;
+          let osc = audioCtx.createOscillator();
+          let gain = audioCtx.createGain();
+          osc.type = type || "square";
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(vol || 0.15, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(
+            0.001,
+            audioCtx.currentTime + (dur || 0.1),
+          );
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + (dur || 0.1));
+        } catch (e) {}
+      }
+      function sndWall() {
+        playTone(220, 0.07, "square", 0.06);
+      }
+      function sndMallet() {
+        playTone(330, 0.09, "square", 0.1);
+      }
+      function sndGoal() {
+        playTone(440, 0.25, "sine", 0.12);
+        setTimeout(() => playTone(660, 0.25, "sine", 0.1), 120);
+      }
+      function sndWin() {
+        playTone(523, 0.12, "sine", 0.12);
+        setTimeout(() => playTone(659, 0.12, "sine", 0.12), 120);
+        setTimeout(() => playTone(784, 0.3, "sine", 0.12), 240);
+      }
+
+      const DIFF = {
+        easy: { react: 0.3, predict: 0, mistake: 0.55, maxSpd: 4 },
+        medium: { react: 0.55, predict: 0.3, mistake: 0.3, maxSpd: 7 },
+        hard: { react: 0.8, predict: 0.65, mistake: 0.1, maxSpd: 12 },
+        pro: { react: 1.0, predict: 0.95, mistake: 0.02, maxSpd: MAX_SPEED },
+      };
+
+      let selectedDiff = "easy",
+        selectedLayout = "horizontal",
+        selectedWinning = 7;
+
+      let pauseBtn = { x: 0, y: 0, w: 32, h: 22 };
+
+      function showScreen(id) {
+        [
+          "screen-menu",
+          "screen-mode",
+          "screen-layout",
+          "screen-layout-2p",
+        ].forEach((s) => {
+          document.getElementById(s).style.display =
+            s === id ? "block" : "none";
+        });
+      }
+      function setDiff(d) {
+        selectedDiff = d;
+        ["easy", "medium", "hard", "pro"].forEach((x) =>
+          document.getElementById("d-" + x).classList.toggle("active", x === d),
+        );
+      }
+      function setLayout(l) {
+        selectedLayout = l;
+        ["horizontal", "vertical"].forEach((x) => {
+          let e1 = document.getElementById("l-" + x),
+            e2 = document.getElementById("l2-" + x);
+          if (e1) e1.classList.toggle("active", x === l);
+          if (e2) e2.classList.toggle("active", x === l);
+        });
+      }
+      function setWinning(n) {
+        selectedWinning = n;
+        [3, 5, 7, 10].forEach((x) => {
+          let e1 = document.getElementById("w-" + x),
+            e2 = document.getElementById("w2-" + x);
+          if (e1) e1.classList.toggle("active", x === n);
+          if (e2) e2.classList.toggle("active", x === n);
+        });
+        let label = "First to " + n;
+        let el = document.getElementById("win-label");
+        if (el) el.textContent = label;
+        let el2 = document.getElementById("win-label-2p");
+        if (el2) el2.textContent = label;
+      }
+      function goMode(m) {
+        mode = m;
+        if (m === "2p") showScreen("screen-layout-2p");
+        else showScreen("screen-mode");
+      }
+
+      function initCanvas() {
+        let vw = window.innerWidth,
+          vh = window.innerHeight;
+        if (layout === "horizontal") {
+          W = Math.min(vw, 580);
+          H = Math.min(vh, 360);
+        } else {
+          W = Math.min(vw, 380);
+          H = Math.min(vh, 620);
+        }
+        canvas.width = W;
+        canvas.height = H;
+        GOAL_SIZE = layout === "horizontal" ? H * 0.42 : W * 0.42;
+        GOAL_POS =
+          layout === "horizontal" ? (H - GOAL_SIZE) / 2 : (W - GOAL_SIZE) / 2;
+      }
+
+      function placeMallets() {
+        if (layout === "horizontal") {
+          mallets[0].x = W * 0.82;
+          mallets[0].y = H / 2;
+          mallets[0].tx = W * 0.82;
+          mallets[0].ty = H / 2;
+          mallets[1].x = W * 0.18;
+          mallets[1].y = H / 2;
+          mallets[1].tx = W * 0.18;
+          mallets[1].ty = H / 2;
+        } else {
+          mallets[0].x = W / 2;
+          mallets[0].y = H * 0.82;
+          mallets[0].tx = W / 2;
+          mallets[0].ty = H * 0.82;
+          mallets[1].x = W / 2;
+          mallets[1].y = H * 0.18;
+          mallets[1].tx = W / 2;
+          mallets[1].ty = H * 0.18;
+        }
+      }
+
+      function startGame() {
+        layout = selectedLayout;
+        difficulty = selectedDiff;
+        WINNING = selectedWinning;
+        initCanvas();
+        document.getElementById("overlay").style.display = "none";
+        document.getElementById("pause-overlay").style.display = "none";
+        score = [0, 0];
+        gameActive = true;
+        paused = false;
+        goalTimer = 0;
+        lastHitter = -1;
+        placeMallets();
+        resetPuck(0);
+      }
+
+      function resumeGame() {
+        paused = false;
+        document.getElementById("pause-overlay").style.display = "none";
+      }
+
+      function restartGame() {
+        paused = false;
+        document.getElementById("pause-overlay").style.display = "none";
+        score = [0, 0];
+        gameActive = true;
+        goalTimer = 0;
+        lastHitter = -1;
+        placeMallets();
+        resetPuck(0);
+      }
+
+      function mainMenu() {
+        paused = false;
+        gameActive = false;
+        goalTimer = 0;
+        document.getElementById("pause-overlay").style.display = "none";
+        document.getElementById("win-overlay").style.display = "none";
+        document.getElementById("overlay").style.display = "block";
+        showScreen("screen-menu");
+      }
+
+      function rematch() {
+        document.getElementById("win-overlay").style.display = "none";
+        score = [0, 0];
+        gameActive = true;
+        paused = false;
+        goalTimer = 0;
+        lastHitter = -1;
+        placeMallets();
+        resetPuck(0);
+      }
+
+      function togglePause() {
+        if (!gameActive) return;
+        paused = !paused;
+        document.getElementById("pause-overlay").style.display = paused
+          ? "flex"
+          : "none";
+      }
+
+      function resetPuck(who) {
+        puck.x = W / 2;
+        puck.y = H / 2;
+        if (layout === "horizontal") {
+          let dir = who === 0 ? 1 : -1,
+            a = (Math.random() - 0.5) * Math.PI * 0.5;
+          puck.vx = dir * Math.cos(a) * INIT_SPEED;
+          puck.vy = Math.sin(a) * INIT_SPEED;
+        } else {
+          let dir = who === 0 ? -1 : 1,
+            a = (Math.random() - 0.5) * Math.PI * 0.5;
+          puck.vx = Math.sin(a) * INIT_SPEED;
+          puck.vy = dir * INIT_SPEED;
+        }
+        trail = [];
+        lastHitter = -1;
+      }
+
+      function spawnSparks(x, y, color, count) {
+        for (let i = 0; i < (count || 10); i++) {
+          let a = Math.random() * Math.PI * 2,
+            spd = 2 + Math.random() * 4;
+          sparks.push({
+            x,
+            y,
+            vx: Math.cos(a) * spd,
+            vy: Math.sin(a) * spd,
+            life: 1,
+            color,
+          });
+        }
+      }
+
+      function clamp(v, lo, hi) {
+        return Math.max(lo, Math.min(hi, v));
+      }
+      function dist(a, b) {
+        return Math.hypot(a.x - b.x, a.y - b.y);
+      }
+
+      const keys = {};
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" || e.key === "p" || e.key === "P") togglePause();
+        keys[e.key] = true;
+        ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key) &&
+          e.preventDefault();
+      });
+      window.addEventListener("keyup", (e) => {
+        keys[e.key] = false;
+      });
+
+      // Window resize – rescale positions proportionally
+      window.addEventListener("resize", () => {
+        let oldW = W,
+          oldH = H;
+        initCanvas();
+        if (gameActive && oldW && oldH) {
+          let sx = W / oldW,
+            sy = H / oldH;
+          puck.x *= sx;
+          puck.y *= sy;
+          puck.vx *= sx;
+          puck.vy *= sy;
+          mallets.forEach((m) => {
+            m.x *= sx;
+            m.y *= sy;
+            m.tx *= sx;
+            m.ty *= sy;
+          });
+          trail.forEach((t) => {
+            t.x *= sx;
+            t.y *= sy;
+          });
+          sparks.forEach((s) => {
+            s.x *= sx;
+            s.y *= sy;
+          });
+        }
+      });
+
+      canvas.addEventListener("click", (e) => {
+        if (!gameActive) return;
+        let r = canvas.getBoundingClientRect();
+        let mx = e.clientX - r.left,
+          my = e.clientY - r.top;
+        if (
+          mx >= pauseBtn.x &&
+          mx <= pauseBtn.x + pauseBtn.w &&
+          my >= pauseBtn.y &&
+          my <= pauseBtn.y + pauseBtn.h
+        ) {
+          togglePause();
+        }
+      });
+
+      canvas.addEventListener("mousemove", (e) => {
+        if (!gameActive || paused) return;
+        let r = canvas.getBoundingClientRect();
+        mallets[0].tx = e.clientX - r.left;
+        mallets[0].ty = e.clientY - r.top;
+      });
+
+      let touches = {};
+      canvas.addEventListener(
+        "touchstart",
+        (e) => {
+          e.preventDefault();
+          for (let t of e.changedTouches) {
+            let r = canvas.getBoundingClientRect();
+            let p = { x: t.clientX - r.left, y: t.clientY - r.top };
+            if (
+              p.x >= pauseBtn.x &&
+              p.x <= pauseBtn.x + pauseBtn.w &&
+              p.y >= pauseBtn.y &&
+              p.y <= pauseBtn.y + pauseBtn.h
+            ) {
+              togglePause();
+              continue;
+            }
+            if (paused) continue;
+            let idx =
+              layout === "horizontal"
+                ? p.x > W / 2
+                  ? 0
+                  : 1
+                : p.y > H / 2
+                ? 0
+                : 1;
+            if (mode === "ai" && idx === 1) continue;
+            touches[t.identifier] = idx;
+            mallets[idx].tx = p.x;
+            mallets[idx].ty = p.y;
+          }
+        },
+        { passive: false },
+      );
+      canvas.addEventListener(
+        "touchmove",
+        (e) => {
+          e.preventDefault();
+          if (paused) return;
+          for (let t of e.changedTouches) {
+            let idx = touches[t.identifier];
+            if (idx !== undefined) {
+              let r = canvas.getBoundingClientRect();
+              mallets[idx].tx = t.clientX - r.left;
+              mallets[idx].ty = t.clientY - r.top;
+            }
+          }
+        },
+        { passive: false },
+      );
+      canvas.addEventListener("touchend", (e) => {
+        for (let t of e.changedTouches) delete touches[t.identifier];
+      });
+
+      function applyKeyboard() {
+        if (mode !== "2p") return;
+        let m = mallets[1],
+          dx = 0,
+          dy = 0;
+        if (keys["ArrowLeft"] || keys["a"] || keys["A"]) dx -= KB_SPEED;
+        if (keys["ArrowRight"] || keys["d"] || keys["D"]) dx += KB_SPEED;
+        if (keys["ArrowUp"] || keys["w"] || keys["W"]) dy -= KB_SPEED;
+        if (keys["ArrowDown"] || keys["s"] || keys["S"]) dy += KB_SPEED;
+        if (dx || dy) {
+          m.tx = m.x + dx;
+          m.ty = m.y + dy;
+        }
+      }
+
+      function aiUpdate() {
+        let d = DIFF[difficulty],
+          m = mallets[1];
+        if (Math.random() < d.mistake) return;
+        let tx, ty;
+        if (layout === "horizontal") {
+          if (puck.vx < 0 && d.predict > 0) {
+            let steps = Math.abs(
+              (puck.x - m.x) / Math.max(Math.abs(puck.vx), 0.1),
+            );
+            ty = clamp(
+              puck.y + puck.vy * steps * d.predict,
+              WALL + m.r,
+              H - WALL - m.r,
+            );
+            tx = clamp(puck.x - W * 0.1, WALL + m.r, W / 2 - m.r);
+          } else {
+            tx = W * 0.18;
+            ty = H / 2;
+          }
+          let vx = (tx - m.x) * d.react * AI_REACT_BASE,
+            vy = (ty - m.y) * d.react * AI_REACT_BASE;
+          let spd = Math.hypot(vx, vy);
+          if (spd > d.maxSpd) {
+            vx = (vx / spd) * d.maxSpd;
+            vy = (vy / spd) * d.maxSpd;
+          }
+          m.vx = vx;
+          m.vy = vy;
+          m.x = clamp(m.x + vx, WALL + m.r, W / 2 - 2);
+          m.y = clamp(m.y + vy, WALL + m.r, H - WALL - m.r);
+        } else {
+          if (puck.vy < 0 && d.predict > 0) {
+            let steps = Math.abs(
+              (puck.y - m.y) / Math.max(Math.abs(puck.vy), 0.1),
+            );
+            tx = clamp(
+              puck.x + puck.vx * steps * d.predict,
+              WALL + m.r,
+              W - WALL - m.r,
+            );
+            ty = clamp(puck.y - H * 0.1, WALL + m.r, H / 2 - m.r);
+          } else {
+            tx = W / 2;
+            ty = H * 0.18;
+          }
+          let vx = (tx - m.x) * d.react * AI_REACT_BASE,
+            vy = (ty - m.y) * d.react * AI_REACT_BASE;
+          let spd = Math.hypot(vx, vy);
+          if (spd > d.maxSpd) {
+            vx = (vx / spd) * d.maxSpd;
+            vy = (vy / spd) * d.maxSpd;
+          }
+          m.vx = vx;
+          m.vy = vy;
+          m.x = clamp(m.x + vx, WALL + m.r, W - WALL - m.r);
+          m.y = clamp(m.y + vy, WALL + m.r, H / 2 - 2);
+        }
+      }
+
+      function updateMallet(m, i) {
+        if (mode === "ai" && i === 1) return;
+        let dx = m.tx - m.x,
+          dy = m.ty - m.y;
+        m.vx = dx * MALLET_SMOOTH;
+        m.vy = dy * MALLET_SMOOTH;
+        m.x += m.vx;
+        m.y += m.vy;
+        if (layout === "horizontal") {
+          if (i === 0) {
+            m.x = clamp(m.x, W / 2 + 2, W - WALL - m.r);
+            m.y = clamp(m.y, WALL + m.r, H - WALL - m.r);
+          } else {
+            m.x = clamp(m.x, WALL + m.r, W / 2 - 2);
+            m.y = clamp(m.y, WALL + m.r, H - WALL - m.r);
+          }
+        } else {
+          if (i === 0) {
+            m.x = clamp(m.x, WALL + m.r, W - WALL - m.r);
+            m.y = clamp(m.y, H / 2 + 2, H - WALL - m.r);
+          } else {
+            m.x = clamp(m.x, WALL + m.r, W - WALL - m.r);
+            m.y = clamp(m.y, WALL + m.r, H / 2 - 2);
+          }
+        }
+      }
+
+      function updatePuck() {
+        trail.push({
+          x: puck.x,
+          y: puck.y,
+          color: mallets[lastHitter >= 0 ? lastHitter : 0].color,
+        });
+        if (trail.length > 20) trail.shift();
+
+        // Clamp displacement to prevent tunneling
+        let spd = Math.hypot(puck.vx, puck.vy);
+        if (spd > puck.r * 1.5) {
+          let scale = (puck.r * 1.5) / spd;
+          puck.vx *= scale;
+          puck.vy *= scale;
+        }
+        puck.x += puck.vx;
+        puck.y += puck.vy;
+        puck.vx *= FRICTION;
+        puck.vy *= FRICTION;
+        spd = Math.hypot(puck.vx, puck.vy);
+        if (spd > MAX_SPEED) {
+          puck.vx = (puck.vx / spd) * MAX_SPEED;
+          puck.vy = (puck.vy / spd) * MAX_SPEED;
+        }
+        if (spd < 0.5) {
+          puck.vx += (Math.random() - 0.5) * 0.8;
+          puck.vy += (Math.random() - 0.5) * 0.8;
+        }
+
+        if (layout === "horizontal") {
+          if (puck.y - puck.r < WALL) {
+            puck.y = WALL + puck.r;
+            puck.vy = Math.abs(puck.vy) * WALL_BOUNCE;
+            spawnSparks(puck.x, WALL, "#fff");
+            sndWall();
+          }
+          if (puck.y + puck.r > H - WALL) {
+            puck.y = H - WALL - puck.r;
+            puck.vy = -Math.abs(puck.vy) * WALL_BOUNCE;
+            spawnSparks(puck.x, H - WALL, "#fff");
+            sndWall();
+          }
+          if (puck.x - puck.r < WALL) {
+            if (puck.y > GOAL_POS && puck.y < GOAL_POS + GOAL_SIZE) {
+              score[0]++;
+              spawnSparks(puck.x, puck.y, "#0f0", 30);
+              sndGoal();
+              if (score[0] >= WINNING) {
+                gameActive = false;
+                endGame(0);
+              } else {
+                goalTimer = 45;
+                goalColor = "#0f0";
+                pendingReset = 1;
+              }
+              return;
+            }
+            puck.x = WALL + puck.r;
+            puck.vx = Math.abs(puck.vx) * WALL_BOUNCE;
+            spawnSparks(WALL, puck.y, "#fff");
+            sndWall();
+          }
+          if (puck.x + puck.r > W - WALL) {
+            if (puck.y > GOAL_POS && puck.y < GOAL_POS + GOAL_SIZE) {
+              score[1]++;
+              spawnSparks(puck.x, puck.y, "#f00", 30);
+              sndGoal();
+              if (score[1] >= WINNING) {
+                gameActive = false;
+                endGame(1);
+              } else {
+                goalTimer = 45;
+                goalColor = "#f00";
+                pendingReset = 0;
+              }
+              return;
+            }
+            puck.x = W - WALL - puck.r;
+            puck.vx = -Math.abs(puck.vx) * WALL_BOUNCE;
+            spawnSparks(W - WALL, puck.y, "#fff");
+            sndWall();
+          }
+        } else {
+          if (puck.x - puck.r < WALL) {
+            puck.x = WALL + puck.r;
+            puck.vx = Math.abs(puck.vx) * WALL_BOUNCE;
+            spawnSparks(WALL, puck.y, "#fff");
+            sndWall();
+          }
+          if (puck.x + puck.r > W - WALL) {
+            puck.x = W - WALL - puck.r;
+            puck.vx = -Math.abs(puck.vx) * WALL_BOUNCE;
+            spawnSparks(W - WALL, puck.y, "#fff");
+            sndWall();
+          }
+          if (puck.y - puck.r < WALL) {
+            if (puck.x > GOAL_POS && puck.x < GOAL_POS + GOAL_SIZE) {
+              score[1]++;
+              spawnSparks(puck.x, puck.y, "#f00", 30);
+              sndGoal();
+              if (score[1] >= WINNING) {
+                gameActive = false;
+                endGame(1);
+              } else {
+                goalTimer = 45;
+                goalColor = "#f00";
+                pendingReset = 0;
+              }
+              return;
+            }
+            puck.y = WALL + puck.r;
+            puck.vy = Math.abs(puck.vy) * WALL_BOUNCE;
+            spawnSparks(puck.x, WALL, "#fff");
+            sndWall();
+          }
+          if (puck.y + puck.r > H - WALL) {
+            if (puck.x > GOAL_POS && puck.x < GOAL_POS + GOAL_SIZE) {
+              score[0]++;
+              spawnSparks(puck.x, puck.y, "#0f0", 30);
+              sndGoal();
+              if (score[0] >= WINNING) {
+                gameActive = false;
+                endGame(0);
+              } else {
+                goalTimer = 45;
+                goalColor = "#0f0";
+                pendingReset = 1;
+              }
+              return;
+            }
+            puck.y = H - WALL - puck.r;
+            puck.vy = -Math.abs(puck.vy) * WALL_BOUNCE;
+            spawnSparks(puck.x, H - WALL, "#fff");
+            sndWall();
+          }
+        }
+        for (let i = 0; i < 2; i++) {
+          let m = mallets[i],
+            d2 = dist(puck, m);
+          if (d2 < puck.r + m.r) {
+            let nx = (puck.x - m.x) / d2,
+              ny = (puck.y - m.y) / d2;
+            puck.x += nx * (puck.r + m.r - d2);
+            puck.y += ny * (puck.r + m.r - d2);
+            // Push out of wall if mallet shoved puck into it
+            if (layout === "horizontal") {
+              if (puck.x - puck.r < WALL) {
+                puck.x = WALL + puck.r;
+                puck.vx = Math.abs(puck.vx) * WALL_BOUNCE;
+              }
+              if (puck.x + puck.r > W - WALL) {
+                puck.x = W - WALL - puck.r;
+                puck.vx = -Math.abs(puck.vx) * WALL_BOUNCE;
+              }
+              if (puck.y - puck.r < WALL) {
+                puck.y = WALL + puck.r;
+                puck.vy = Math.abs(puck.vy) * WALL_BOUNCE;
+              }
+              if (puck.y + puck.r > H - WALL) {
+                puck.y = H - WALL - puck.r;
+                puck.vy = -Math.abs(puck.vy) * WALL_BOUNCE;
+              }
+            } else {
+              if (puck.y - puck.r < WALL) {
+                puck.y = WALL + puck.r;
+                puck.vy = Math.abs(puck.vy) * WALL_BOUNCE;
+              }
+              if (puck.y + puck.r > H - WALL) {
+                puck.y = H - WALL - puck.r;
+                puck.vy = -Math.abs(puck.vy) * WALL_BOUNCE;
+              }
+              if (puck.x - puck.r < WALL) {
+                puck.x = WALL + puck.r;
+                puck.vx = Math.abs(puck.vx) * WALL_BOUNCE;
+              }
+              if (puck.x + puck.r > W - WALL) {
+                puck.x = W - WALL - puck.r;
+                puck.vx = -Math.abs(puck.vx) * WALL_BOUNCE;
+              }
+            }
+            let dot = puck.vx * nx + puck.vy * ny;
+            let imp =
+              Math.hypot(m.vx, m.vy) * MALLET_IMPULSE_SPEED +
+              MALLET_IMPULSE_BASE;
+            puck.vx = puck.vx - 2 * dot * nx + m.vx * imp * nx;
+            puck.vy = puck.vy - 2 * dot * ny + m.vy * imp * ny;
+            let s2 = Math.hypot(puck.vx, puck.vy);
+            if (s2 > MAX_SPEED) {
+              puck.vx = (puck.vx / s2) * MAX_SPEED;
+              puck.vy = (puck.vy / s2) * MAX_SPEED;
+            }
+            lastHitter = i;
+            spawnSparks(puck.x, puck.y, m.color);
+            sndMallet();
+          }
+        }
+      }
+
+      function updateSparks() {
+        for (let i = sparks.length - 1; i >= 0; i--) {
+          let s = sparks[i];
+          s.x += s.vx;
+          s.y += s.vy;
+          s.vy += 0.15;
+          s.life -= 0.06;
+          if (s.life <= 0) sparks.splice(i, 1);
+        }
+      }
+
+      function endGame(winner) {
+        gameActive = false;
+        if (winner === 0) sndWin();
+        else sndWin();
+        let wo = document.getElementById("win-overlay");
+        let wt = document.getElementById("win-text"),
+          ws = document.getElementById("win-sub");
+        let c = winner === 0 ? "#0f0" : "#f00";
+        wt.style.color = c;
+        wt.style.textShadow = `0 0 28px ${c}`;
+        if (mode === "ai") {
+          wt.textContent = winner === 0 ? "You Win!" : "Computer Wins!";
+          ws.innerHTML = `Score: ${score[0]} – ${
+            score[1]
+          }<br>Difficulty: ${difficulty.toUpperCase()}`;
+        } else {
+          wt.textContent = `Player ${winner === 0 ? "1" : "2"} Wins!`;
+          ws.innerHTML = `Score: ${score[0]} – ${score[1]}<br>P1: Mouse &nbsp;|&nbsp; P2: WASD / Arrows`;
+        }
+        wo.style.display = "block";
+      }
+
+      function neonLine(x1, y1, x2, y2, color, w) {
+        ctx.save();
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 18;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = w || 3;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawPauseButton() {
+        let bw = 32,
+          bh = 22,
+          bx = W / 2 - bw / 2,
+          by = layout === "horizontal" ? H * 0.035 : H * 0.015;
+        pauseBtn = { x: bx, y: by, w: bw, h: bh };
+        ctx.save();
+        ctx.globalAlpha = paused ? 1 : 0.55;
+        ctx.fillStyle = paused ? "#ff0" : "#fff";
+        ctx.shadowColor = paused ? "#ff0" : "transparent";
+        ctx.shadowBlur = paused ? 12 : 0;
+        let bw2 = 7,
+          gap = 6,
+          totalW = bw2 * 2 + gap;
+        let startX = bx + (bw - totalW) / 2,
+          midY = by + bh / 2;
+        ctx.fillRect(startX, midY - bh * 0.38, bw2, bh * 0.76);
+        ctx.fillRect(startX + bw2 + gap, midY - bh * 0.38, bw2, bh * 0.76);
+        ctx.restore();
+      }
+
+      function drawGoalFlash() {
+        if (!goalTimer) return;
+        let a = goalTimer / 45; // fade out
+        let fs = Math.round(Math.min(W, H) * 0.22);
+        ctx.save();
+        ctx.globalAlpha = a * 0.85;
+        ctx.shadowColor = goalColor;
+        ctx.shadowBlur = 40;
+        ctx.font = `bold ${fs}px monospace`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = goalColor;
+        ctx.fillText("GOAL!", W / 2, H / 2);
+        ctx.restore();
+      }
+
+      function drawTable() {
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.strokeStyle = "rgba(255,255,255,0.06)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(W / 2, H / 2, Math.min(W, H) * 0.28, 0, Math.PI * 2);
+        ctx.stroke();
+
+        if (layout === "horizontal") {
+          ctx.setLineDash([6, 6]);
+          ctx.strokeStyle = "rgba(255,255,255,0.08)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(W / 2, WALL);
+          ctx.lineTo(W / 2, H - WALL);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          neonLine(WALL, WALL, W - WALL, WALL, "#00f", 3);
+          neonLine(WALL, H - WALL, W - WALL, H - WALL, "#00f", 3);
+          neonLine(WALL, WALL, WALL, GOAL_POS, "#f00", 3);
+          neonLine(WALL, GOAL_POS + GOAL_SIZE, WALL, H - WALL, "#f00", 3);
+          neonLine(W - WALL, WALL, W - WALL, GOAL_POS, "#0f0", 3);
+          neonLine(
+            W - WALL,
+            GOAL_POS + GOAL_SIZE,
+            W - WALL,
+            H - WALL,
+            "#0f0",
+            3,
+          );
+          let fs = Math.round(H * 0.1);
+          ctx.font = `bold ${fs}px monospace`;
+          ctx.textAlign = "center";
+          ctx.fillStyle = "#f00";
+          ctx.shadowColor = "#f00";
+          ctx.shadowBlur = 14;
+          ctx.fillText(score[1], W / 2 - H * 0.16, H * 0.13);
+          ctx.fillStyle = "#0f0";
+          ctx.shadowColor = "#0f0";
+          ctx.fillText(score[0], W / 2 + H * 0.16, H * 0.13);
+          ctx.shadowBlur = 0;
+          ctx.font = ".58rem monospace";
+          ctx.fillStyle = "rgba(255,0,0,0.35)";
+          ctx.fillText(
+            mode === "ai" ? `CPU·${difficulty.toUpperCase()}` : "P2·WASD",
+            W * 0.1,
+            H * 0.92,
+          );
+          ctx.fillStyle = "rgba(0,255,0,0.35)";
+          ctx.fillText("P1·MOUSE", W * 0.9, H * 0.92);
+        } else {
+          ctx.setLineDash([6, 6]);
+          ctx.strokeStyle = "rgba(255,255,255,0.08)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(WALL, H / 2);
+          ctx.lineTo(W - WALL, H / 2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          neonLine(WALL, WALL, W - WALL, WALL, "#f00", 3);
+          neonLine(WALL, H - WALL, W - WALL, H - WALL, "#0f0", 3);
+          neonLine(WALL, WALL, WALL, H - WALL, "#00f", 3);
+          neonLine(W - WALL, WALL, W - WALL, H - WALL, "#00f", 3);
+          ctx.fillStyle = "#000";
+          ctx.fillRect(WALL - 1, WALL - 1, GOAL_POS - (WALL - 1), 6);
+          ctx.fillRect(
+            GOAL_POS + GOAL_SIZE,
+            WALL - 1,
+            W - GOAL_POS - GOAL_SIZE - WALL + 1,
+            6,
+          );
+          ctx.fillRect(WALL - 1, H - WALL - 1, GOAL_POS - (WALL - 1), 6);
+          ctx.fillRect(
+            GOAL_POS + GOAL_SIZE,
+            H - WALL - 1,
+            W - GOAL_POS - GOAL_SIZE - WALL + 1,
+            6,
+          );
+          let fs = Math.round(W * 0.1);
+          ctx.font = `bold ${fs}px monospace`;
+          ctx.textAlign = "center";
+          ctx.fillStyle = "#f00";
+          ctx.shadowColor = "#f00";
+          ctx.shadowBlur = 14;
+          ctx.fillText(score[1], W / 2 - W * 0.16, H / 2 - 8);
+          ctx.fillStyle = "#0f0";
+          ctx.shadowColor = "#0f0";
+          ctx.fillText(score[0], W / 2 + W * 0.16, H / 2 - 8);
+          ctx.shadowBlur = 0;
+          ctx.font = ".58rem monospace";
+          ctx.fillStyle = "rgba(255,0,0,0.35)";
+          ctx.textAlign = "center";
+          ctx.fillText(
+            mode === "ai" ? `CPU·${difficulty.toUpperCase()}` : "P2·WASD",
+            W / 2,
+            20,
+          );
+          ctx.fillStyle = "rgba(0,255,0,0.35)";
+          ctx.fillText("P1·MOUSE", W / 2, H - 8);
+        }
+        drawPauseButton();
+        drawGoalFlash();
+      }
+
+      function drawTrail() {
+        for (let i = 0; i < trail.length; i++) {
+          let a = i / trail.length;
+          ctx.beginPath();
+          ctx.arc(
+            trail[i].x,
+            trail[i].y,
+            puck.r * (0.2 + 0.8 * a),
+            0,
+            Math.PI * 2,
+          );
+          ctx.fillStyle = trail[i].color;
+          ctx.globalAlpha = a * 0.3;
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+      }
+      function drawSparks() {
+        for (let s of sparks) {
+          ctx.save();
+          ctx.globalAlpha = s.life;
+          ctx.shadowColor = s.color;
+          ctx.shadowBlur = 8;
+          ctx.fillStyle = s.color;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+      function drawPuck() {
+        ctx.save();
+        ctx.shadowColor = "#ff0";
+        ctx.shadowBlur = 18;
+        ctx.beginPath();
+        ctx.arc(puck.x, puck.y, puck.r, 0, Math.PI * 2);
+        ctx.fillStyle = "#ffe033";
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      }
+      function drawMallet(m) {
+        ctx.save();
+        ctx.shadowColor = m.color;
+        ctx.shadowBlur = 30;
+        ctx.beginPath();
+        ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+        ctx.strokeStyle = m.color;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(0,0,0,0.7)";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(m.x, m.y, m.r * 0.38, 0, Math.PI * 2);
+        ctx.fillStyle = m.color;
+        ctx.shadowBlur = 20;
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function loop() {
+        if (gameActive && !paused) {
+          if (mode === "ai") aiUpdate();
+          else applyKeyboard();
+          updateMallet(mallets[0], 0);
+          if (mode === "2p") updateMallet(mallets[1], 1);
+          if (goalTimer) {
+            goalTimer--;
+            if (!goalTimer && pendingReset >= 0) {
+              resetPuck(pendingReset);
+              pendingReset = -1;
+            }
+          } else {
+            updatePuck();
+          }
+          updateSparks();
+        }
+        drawTable();
+        drawTrail();
+        drawSparks();
+        drawPuck();
+        drawMallet(mallets[0]);
+        drawMallet(mallets[1]);
+        requestAnimationFrame(loop);
+      }
+
+      initCanvas();
+      loop();
+    </script>
+  </body>
+</html>
