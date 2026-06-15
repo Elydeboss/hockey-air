@@ -161,6 +161,33 @@
         background: rgba(0, 255, 0, 0.07);
       }
 
+      #pause-float-btn {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 15;
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #fff;
+        font-size: 1.2rem;
+        cursor: pointer;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+        transition: background 0.15s, border-color 0.15s;
+      }
+      #pause-float-btn:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.4);
+      }
+      #pause-float-btn.visible {
+        display: flex;
+      }
+
       #win-overlay {
         position: absolute;
         left: 50%;
@@ -535,6 +562,8 @@
       </div>
     </div>
 
+    <button id="pause-float-btn" onclick="togglePause()">⏸</button>
+
     <!-- Win screen -->
     <div id="win-overlay">
       <h1 id="win-text"></h1>
@@ -719,8 +748,6 @@
       let scorePopTimer = [0, 0];
       let confetti = [];
       let frameCount = 0;
-
-      let pauseBtn = { x: 0, y: 0, w: 32, h: 22 };
 
       // ─── Menu Navigation ───────────────────────────────────────────────
       function showScreen(id) {
@@ -1134,21 +1161,6 @@
         }
       });
 
-      canvas.addEventListener("click", (e) => {
-        if (!gameActive) return;
-        let r = canvas.getBoundingClientRect();
-        let mx = e.clientX - r.left,
-          my = e.clientY - r.top;
-        if (
-          mx >= pauseBtn.x &&
-          mx <= pauseBtn.x + pauseBtn.w &&
-          my >= pauseBtn.y &&
-          my <= pauseBtn.y + pauseBtn.h
-        ) {
-          togglePause();
-        }
-      });
-
       canvas.addEventListener("mousemove", (e) => {
         if (!gameActive || paused) return;
         let r = canvas.getBoundingClientRect();
@@ -1170,15 +1182,6 @@
           for (let t of e.changedTouches) {
             let r = canvas.getBoundingClientRect();
             let p = { x: t.clientX - r.left, y: t.clientY - r.top };
-            if (
-              p.x >= pauseBtn.x &&
-              p.x <= pauseBtn.x + pauseBtn.w &&
-              p.y >= pauseBtn.y &&
-              p.y <= pauseBtn.y + pauseBtn.h
-            ) {
-              togglePause();
-              continue;
-            }
             if (paused) continue;
             if (mode === "online") {
               sendInput(p.x / W, p.y / H);
@@ -1280,6 +1283,27 @@
             rawTy += (Math.random() - 0.5) * d.inaccuracy * H * 0.2;
             rawTx = clamp(rawTx, WALL + m.r, W - WALL - m.r);
             rawTy = clamp(rawTy, WALL + m.r, H / 2 - m.r);
+          }
+
+          // ── Corner awareness ──
+          const CORNER_ZONE = 45;
+          const puckInCorner =
+            (puck.x - WALL < CORNER_ZONE && puck.y - WALL < CORNER_ZONE) ||
+            (layout === "horizontal"
+              ? puck.x - WALL < CORNER_ZONE && (H - WALL) - puck.y < CORNER_ZONE
+              : (W - WALL) - puck.x < CORNER_ZONE && puck.y - WALL < CORNER_ZONE) ||
+            (layout === "horizontal"
+              ? false
+              : (W - WALL) - puck.x < CORNER_ZONE && (H - WALL) - puck.y < CORNER_ZONE);
+          if (puckInCorner && Math.hypot(puck.vx, puck.vy) < 5) {
+            const margin = 40;
+            if (layout === "horizontal") {
+              rawTx = clamp(puck.x, WALL + margin, W / 2 - margin);
+              rawTy = clamp(puck.y, WALL + margin, H - WALL - margin);
+            } else {
+              rawTx = clamp(puck.x, WALL + margin, W - WALL - margin);
+              rawTy = clamp(puck.y, WALL + margin, H / 2 - margin);
+            }
           }
 
           // Blend toward new target (smooth transition, no instant snap)
@@ -1638,31 +1662,6 @@
         ctx.restore();
       }
 
-      function drawPauseButton() {
-        if (mode === "online") {
-          pauseBtn = { x: 0, y: 0, w: 0, h: 0 };
-          return;
-        }
-        let bw = 32,
-          bh = 22,
-          bx = W / 2 - bw / 2,
-          by = layout === "horizontal" ? H * 0.035 : H * 0.015;
-        pauseBtn = { x: bx, y: by, w: bw, h: bh };
-        ctx.save();
-        ctx.globalAlpha = paused ? 1 : 0.55;
-        ctx.fillStyle = paused ? "#ff0" : "#fff";
-        ctx.shadowColor = paused ? "#ff0" : "transparent";
-        ctx.shadowBlur = paused ? 12 : 0;
-        let bw2 = 7,
-          gap = 6,
-          totalW = bw2 * 2 + gap;
-        let startX = bx + (bw - totalW) / 2,
-          midY = by + bh / 2;
-        ctx.fillRect(startX, midY - bh * 0.38, bw2, bh * 0.76);
-        ctx.fillRect(startX + bw2 + gap, midY - bh * 0.38, bw2, bh * 0.76);
-        ctx.restore();
-      }
-
       function drawGoalFlash() {
         if (!goalTimer) return;
         let a = goalTimer / 45;
@@ -1811,7 +1810,6 @@
           ctx.fillStyle = "rgba(255,0,255,0.4)";
           ctx.fillText("ONLINE", W / 2, H - 8);
         }
-        drawPauseButton();
         drawGoalFlash();
         // Confetti
         for (let c of confetti) {
@@ -1896,6 +1894,10 @@
 
       function loop() {
         frameCount++;
+        document.getElementById("pause-float-btn").classList.toggle(
+          "visible",
+          gameActive && !paused && mode !== "online",
+        );
         if (gameActive && !paused) {
           if (mode === "online") {
             if (goalTimer > 0) goalTimer--;
