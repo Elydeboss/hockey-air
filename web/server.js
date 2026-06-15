@@ -187,6 +187,15 @@ class Room {
       p.x = W - WALL - PUCK_R; p.vx = -Math.abs(p.vx) * WALL_BOUNCE;
     }
 
+    // ── Corner escape ──
+    if (Math.hypot(p.vx, p.vy) < 3) {
+      const Z = 40, N = 2;
+      if (p.x - WALL < Z && p.y - WALL < Z) { p.vx += N; p.vy += N; }
+      else if ((W - WALL) - p.x < Z && p.y - WALL < Z) { p.vx -= N; p.vy += N; }
+      else if (p.x - WALL < Z && (H - WALL) - p.y < Z) { p.vx += N; p.vy -= N; }
+      else if ((W - WALL) - p.x < Z && (H - WALL) - p.y < Z) { p.vx -= N; p.vy -= N; }
+    }
+
     // ── Mallet-puck collisions ──
     for (let i = 0; i < 2; i++) {
       const m = s.mallets[i];
