@@ -295,7 +295,7 @@
         WS_SERVER:
           location.hostname === "localhost" || location.hostname === "127.0.0.1"
             ? "localhost:3000"
-            : "your-backend.onrender.com",
+            : "hockey-air.onrender.com",
       };
     </script>
   </head>
@@ -1290,11 +1290,13 @@
           const puckInCorner =
             (puck.x - WALL < CORNER_ZONE && puck.y - WALL < CORNER_ZONE) ||
             (layout === "horizontal"
-              ? puck.x - WALL < CORNER_ZONE && (H - WALL) - puck.y < CORNER_ZONE
-              : (W - WALL) - puck.x < CORNER_ZONE && puck.y - WALL < CORNER_ZONE) ||
+              ? puck.x - WALL < CORNER_ZONE && H - WALL - puck.y < CORNER_ZONE
+              : W - WALL - puck.x < CORNER_ZONE &&
+                puck.y - WALL < CORNER_ZONE) ||
             (layout === "horizontal"
               ? false
-              : (W - WALL) - puck.x < CORNER_ZONE && (H - WALL) - puck.y < CORNER_ZONE);
+              : W - WALL - puck.x < CORNER_ZONE &&
+                H - WALL - puck.y < CORNER_ZONE);
           if (puckInCorner && Math.hypot(puck.vx, puck.vy) < 5) {
             const margin = 40;
             if (layout === "horizontal") {
@@ -1521,11 +1523,21 @@
         }
         // ── Corner escape ──
         if (Math.hypot(puck.vx, puck.vy) < 3) {
-          const Z = 40, N = 2;
-          if (puck.x - WALL < Z && puck.y - WALL < Z) { puck.vx += N; puck.vy += N; }
-          else if ((W - WALL) - puck.x < Z && puck.y - WALL < Z) { puck.vx -= N; puck.vy += N; }
-          else if (puck.x - WALL < Z && (H - WALL) - puck.y < Z) { puck.vx += N; puck.vy -= N; }
-          else if ((W - WALL) - puck.x < Z && (H - WALL) - puck.y < Z) { puck.vx -= N; puck.vy -= N; }
+          const Z = 40,
+            N = 2;
+          if (puck.x - WALL < Z && puck.y - WALL < Z) {
+            puck.vx += N;
+            puck.vy += N;
+          } else if (W - WALL - puck.x < Z && puck.y - WALL < Z) {
+            puck.vx -= N;
+            puck.vy += N;
+          } else if (puck.x - WALL < Z && H - WALL - puck.y < Z) {
+            puck.vx += N;
+            puck.vy -= N;
+          } else if (W - WALL - puck.x < Z && H - WALL - puck.y < Z) {
+            puck.vx -= N;
+            puck.vy -= N;
+          }
         }
         for (let i = 0; i < 2; i++) {
           let m = mallets[i],
@@ -1894,10 +1906,12 @@
 
       function loop() {
         frameCount++;
-        document.getElementById("pause-float-btn").classList.toggle(
-          "visible",
-          gameActive && !paused && mode !== "online",
-        );
+        document
+          .getElementById("pause-float-btn")
+          .classList.toggle(
+            "visible",
+            gameActive && !paused && mode !== "online",
+          );
         if (gameActive && !paused) {
           if (mode === "online") {
             if (goalTimer > 0) goalTimer--;
