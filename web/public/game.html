@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta
@@ -44,10 +44,12 @@
         color: rgba(255, 255, 255, 0.4);
         font-size: 0.75rem;
         letter-spacing: 2px;
-        margin-bottom: 1.4rem;
+        margin-bottom: 1.2rem;
       }
       .mode-btn {
-        display: block;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         width: 100%;
         background: transparent;
         border: 1px solid rgba(255, 255, 255, 0.25);
@@ -58,7 +60,6 @@
         cursor: pointer;
         border-radius: 4px;
         margin-bottom: 10px;
-        text-align: left;
         transition: background 0.15s, border-color 0.15s;
       }
       .mode-btn:hover {
@@ -66,7 +67,6 @@
         border-color: rgba(255, 255, 255, 0.5);
       }
       .mode-btn span {
-        float: right;
         color: rgba(255, 255, 255, 0.35);
         font-size: 0.8rem;
       }
@@ -103,7 +103,7 @@
         font-size: 0.78rem;
         font-family: monospace;
         cursor: pointer;
-        margin-top: 0.4rem;
+        margin-top: 1.2rem;
       }
       .back-btn:hover {
         color: #fff;
@@ -196,7 +196,7 @@
         text-align: center;
         color: #fff;
         display: none;
-        z-index: 10;
+        z-index: 11;
       }
       #win-overlay h1 {
         font-size: 2rem;
@@ -315,7 +315,7 @@
         <button class="mode-btn" onclick="showScreen('screen-join')">
           Join Game <span>Enter Code</span>
         </button>
-        <br /><button class="back-btn" onclick="mainMenu()">
+        <button class="back-btn" onclick="mainMenu()">
           ← Back
         </button>
       </div>
@@ -335,7 +335,7 @@
             min-height: 1.2rem;
           "
         ></p>
-        <br /><button class="back-btn" onclick="onlineCancel()">
+        <button class="back-btn" onclick="onlineCancel()">
           ← Cancel
         </button>
       </div>
@@ -354,7 +354,7 @@
         <button class="mode-btn" onclick="onlineJoin()">
           JOIN <span>Enter Match</span>
         </button>
-        <br /><button class="back-btn" onclick="showScreen('screen-online')">
+        <button class="back-btn" onclick="showScreen('screen-online')">
           ← Back
         </button>
       </div>

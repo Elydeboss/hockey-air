@@ -1,22 +1,22 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:#000; overflow:hidden; display:flex; align-items:center; justify-content:center; height:100vh; font-family:monospace; }
 #overlay { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); text-align:center; color:#fff; min-width:300px; z-index:5; }
 #overlay h1 { font-size:1.8rem; letter-spacing:3px; margin-bottom:.3rem; }
-.sub { color:rgba(255,255,255,0.4); font-size:.75rem; letter-spacing:2px; margin-bottom:1.4rem; }
-.mode-btn { display:block; width:100%; background:transparent; border:1px solid rgba(255,255,255,0.25); color:#fff; padding:12px 20px; font-size:.9rem; font-family:monospace; cursor:pointer; border-radius:4px; margin-bottom:10px; text-align:left; transition:background .15s,border-color .15s; }
+.sub { color:rgba(255,255,255,0.4); font-size:.75rem; letter-spacing:2px; margin-bottom:1.2rem; }
+.mode-btn { display:flex; justify-content:space-between; align-items:center; width:100%; background:transparent; border:1px solid rgba(255,255,255,0.25); color:#fff; padding:12px 20px; font-size:.9rem; font-family:monospace; cursor:pointer; border-radius:4px; margin-bottom:10px; transition:background .15s,border-color .15s; }
 .mode-btn:hover { background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.5); }
-.mode-btn span { float:right; color:rgba(255,255,255,0.35); font-size:.8rem; }
+.mode-btn span { color:rgba(255,255,255,0.35); font-size:.8rem; }
 .row { display:flex; gap:8px; margin-bottom:1.2rem; }
 .pick-btn { flex:1; background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.5); padding:10px 4px; font-size:.78rem; font-family:monospace; cursor:pointer; border-radius:4px; line-height:1.6; }
 .pick-btn.active { border-color:#ff0; color:#ff0; text-shadow:0 0 8px #ff0; }
 .pick-btn:hover:not(.active) { border-color:rgba(255,255,255,0.4); color:#fff; }
-.back-btn { background:transparent; border:none; color:rgba(255,255,255,0.3); font-size:.78rem; font-family:monospace; cursor:pointer; margin-top:.4rem; }
+.back-btn { background:transparent; border:none; color:rgba(255,255,255,0.3); font-size:.78rem; font-family:monospace; cursor:pointer; margin-top:1.2rem; }
 .back-btn:hover { color:#fff; }
 </style>
 <script>
@@ -46,7 +46,7 @@ window.env = {
       <button class="pick-btn" id="d-pro" onclick="setDiff('pro')">PRO</button>
     </div>
     <button class="mode-btn" onclick="showScreen('screen-layout')">NEXT <span>Choose Layout</span></button>
-    <br><button class="back-btn" onclick="showScreen('screen-menu')">Back</button>
+    <button class="back-btn" onclick="showScreen('screen-menu')">← Back</button>
   </div>
   <div id="screen-layout" style="display:none">
     <h1 style="font-size:1.2rem;margin-bottom:.3rem">TABLE LAYOUT</h1>
@@ -63,7 +63,7 @@ window.env = {
       <button class="pick-btn" id="w-10" onclick="setWinning(10)" style="flex:0;padding:6px 12px;font-size:.78rem">10</button>
     </div>
     <button class="mode-btn" onclick="startGame()">START GAME <span id="win-label">First to 7</span></button>
-    <br><button class="back-btn" onclick="showScreen('screen-mode')">Back</button>
+    <button class="back-btn" onclick="showScreen('screen-mode')">← Back</button>
   </div>
   <div id="screen-layout-2p" style="display:none">
     <h1 style="font-size:1.2rem;margin-bottom:.3rem">TABLE LAYOUT</h1>
@@ -80,7 +80,7 @@ window.env = {
       <button class="pick-btn" id="w2-10" onclick="setWinning(10)" style="flex:0;padding:6px 12px;font-size:.78rem">10</button>
     </div>
     <button class="mode-btn" onclick="startGame()">START GAME <span id="win-label-2p">First to 7</span></button>
-    <br><button class="back-btn" onclick="showScreen('screen-menu')">Back</button>
+    <button class="back-btn" onclick="showScreen('screen-menu')">← Back</button>
   </div>
 
 </div>

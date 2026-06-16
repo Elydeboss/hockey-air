@@ -1,63 +1,63 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   StatusBar,
-  KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
-function ConnectScreen({ onConnect }) {
-  const [url, setUrl] = useState('');
+const SERVER_URL = 'http://hockey-air.onrender.com';
 
+function LoadingScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
       <View style={styles.center}>
         <Text style={styles.title}>AIR HOCKEY</Text>
         <Text style={styles.subtitle}>NEON EDITION</Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Server URL"
-          placeholderTextColor="rgba(255,255,255,0.3)"
-          value={url}
-          onChangeText={setUrl}
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="url"
-        />
-
-        <TouchableOpacity
-          style={[styles.button, !url.trim() && styles.buttonDisabled]}
-          onPress={() => onConnect(url.trim())}
-          disabled={!url.trim()}
-        >
-          <Text style={styles.buttonText}>CONNECT</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.hint}>
-          Enter the server address{'\n'}(e.g. http://192.168.1.100:3000)
-        </Text>
+        <ActivityIndicator size="large" color="#ff0" style={{ marginTop: 32 }} />
+        <Text style={styles.hint}>Connecting...</Text>
       </View>
     </SafeAreaView>
   );
 }
 
-function GameWebView({ uri, onDisconnect }) {
-  const webRef = useRef(null);
+function ErrorScreen({ message, onRetry, onBack }) {
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
+      <View style={styles.center}>
+        <Text style={styles.title}>AIR HOCKEY</Text>
+        <Text style={styles.subtitle}>NEON EDITION</Text>
+        <Text style={styles.errorText}>{message}</Text>
+        <TouchableOpacity style={styles.button} onPress={onRetry}>
+          <Text style={styles.buttonText}>RETRY</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.backButton} onPress={onBack}>
+          <Text style={styles.backText}>← Back</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+function GameWebView({ uri, onError }) {
+  const [loading, setLoading] = useState(true);
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#000' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#000' }}>
       <StatusBar hidden />
+      {loading && (
+        <View style={StyleSheet.absoluteFill}>
+          <LoadingScreen />
+        </View>
+      )}
       <WebView
-        ref={webRef}
         source={{ uri }}
         style={{ flex: 1, backgroundColor: '#000' }}
         allowsInlineMediaPlayback
@@ -67,25 +67,35 @@ function GameWebView({ uri, onDisconnect }) {
         scrollEnabled={false}
         bounces={false}
         overScrollMode="never"
+        onLoadEnd={() => setLoading(false)}
+        onError={(syntheticEvent) => {
+          const { nativeEvent } = syntheticEvent;
+          onError(nativeEvent.description || 'Failed to load game');
+        }}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
 export default function App() {
-  const [serverUrl, setServerUrl] = useState(null);
+  const [error, setError] = useState(null);
+  const [key, setKey] = useState(0);
 
-  if (!serverUrl) {
+  if (error) {
     return (
       <SafeAreaProvider>
-        <ConnectScreen onConnect={setServerUrl} />
+        <ErrorScreen
+          message={error}
+          onRetry={() => { setError(null); setKey(k => k + 1); }}
+          onBack={() => { setError(null); setKey(k => k + 1); }}
+        />
       </SafeAreaProvider>
     );
   }
 
   return (
-    <SafeAreaProvider>
-      <GameWebView uri={serverUrl} />
+    <SafeAreaProvider key={key}>
+      <GameWebView uri={SERVER_URL} onError={setError} />
     </SafeAreaProvider>
   );
 }
@@ -116,19 +126,6 @@ const styles = StyleSheet.create({
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
     marginBottom: 40,
   },
-  input: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
-    color: '#fff',
-    padding: 14,
-    fontSize: 16,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    textAlign: 'center',
-    borderRadius: 4,
-    width: '100%',
-    marginBottom: 16,
-  },
   button: {
     backgroundColor: 'transparent',
     borderWidth: 1,
@@ -138,9 +135,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     width: '100%',
     alignItems: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.4,
+    marginBottom: 12,
   },
   buttonText: {
     color: '#fff',
@@ -148,12 +143,27 @@ const styles = StyleSheet.create({
     letterSpacing: 3,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
+  backButton: {
+    paddingVertical: 8,
+  },
+  backText: {
+    color: 'rgba(255,255,255,0.3)',
+    fontSize: 14,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  errorText: {
+    color: '#f44',
+    fontSize: 13,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
   hint: {
     color: 'rgba(255,255,255,0.25)',
     fontSize: 11,
     textAlign: 'center',
-    marginTop: 20,
-    lineHeight: 18,
+    marginTop: 12,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
 });

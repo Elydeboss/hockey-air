@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta
@@ -33,6 +33,7 @@
         text-align: center;
         color: #fff;
         min-width: 300px;
+        z-index: 5;
       }
       #overlay h1 {
         font-size: 1.8rem;
@@ -43,10 +44,12 @@
         color: rgba(255, 255, 255, 0.4);
         font-size: 0.75rem;
         letter-spacing: 2px;
-        margin-bottom: 1.4rem;
+        margin-bottom: 1.2rem;
       }
       .mode-btn {
-        display: block;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         width: 100%;
         background: transparent;
         border: 1px solid rgba(255, 255, 255, 0.25);
@@ -57,7 +60,6 @@
         cursor: pointer;
         border-radius: 4px;
         margin-bottom: 10px;
-        text-align: left;
         transition: background 0.15s, border-color 0.15s;
       }
       .mode-btn:hover {
@@ -65,7 +67,6 @@
         border-color: rgba(255, 255, 255, 0.5);
       }
       .mode-btn span {
-        float: right;
         color: rgba(255, 255, 255, 0.35);
         font-size: 0.8rem;
       }
@@ -102,7 +103,7 @@
         font-size: 0.78rem;
         font-family: monospace;
         cursor: pointer;
-        margin-top: 0.4rem;
+        margin-top: 1.2rem;
       }
       .back-btn:hover {
         color: #fff;
@@ -118,6 +119,7 @@
         align-items: center;
         justify-content: center;
         background: rgba(0, 0, 0, 0.72);
+        z-index: 10;
       }
       #pause-box {
         text-align: center;
@@ -167,6 +169,7 @@
         text-align: center;
         color: #fff;
         display: none;
+        z-index: 11;
       }
       #win-overlay h1 {
         font-size: 2rem;
@@ -231,7 +234,7 @@
         <button class="mode-btn" onclick="showScreen('screen-layout')">
           NEXT <span>Choose Layout →</span>
         </button>
-        <br /><button class="back-btn" onclick="showScreen('screen-menu')">
+        <button class="back-btn" onclick="showScreen('screen-menu')">
           ← Back
         </button>
       </div>
@@ -245,9 +248,7 @@
             onclick="setLayout('horizontal')"
             style="padding: 16px 4px"
           >
-            ⬛ HORIZONTAL<br /><span style="font-size: 0.68rem; opacity: 0.5"
-              >Landscape</span
-            >
+            ⬛ HORIZONTAL<br /><span style="font-size: 0.68rem; opacity: 0.5">Landscape</span>
           </button>
           <button
             class="pick-btn"
@@ -255,9 +256,7 @@
             onclick="setLayout('vertical')"
             style="padding: 16px 4px"
           >
-            ▬ VERTICAL<br /><span style="font-size: 0.68rem; opacity: 0.5"
-              >Portrait</span
-            >
+            ▬ VERTICAL<br /><span style="font-size: 0.68rem; opacity: 0.5">Portrait</span>
           </button>
         </div>
         <div class="row" style="justify-content: center; gap: 6px">
@@ -268,8 +267,7 @@
               letter-spacing: 1px;
               align-self: center;
             "
-            >FIRST TO</span
-          >
+            >FIRST TO</span>
           <button
             class="pick-btn active"
             id="w-3"
@@ -306,7 +304,7 @@
         <button class="mode-btn" onclick="startGame()">
           START GAME <span id="win-label">First to 7</span>
         </button>
-        <br /><button class="back-btn" onclick="showScreen('screen-mode')">
+        <button class="back-btn" onclick="showScreen('screen-mode')">
           ← Back
         </button>
       </div>
@@ -320,9 +318,7 @@
             onclick="setLayout('horizontal')"
             style="padding: 16px 4px"
           >
-            ⬛ HORIZONTAL<br /><span style="font-size: 0.68rem; opacity: 0.5"
-              >Mouse vs WASD</span
-            >
+            ⬛ HORIZONTAL<br /><span style="font-size: 0.68rem; opacity: 0.5">Mouse vs WASD</span>
           </button>
           <button
             class="pick-btn"
@@ -330,9 +326,7 @@
             onclick="setLayout('vertical')"
             style="padding: 16px 4px"
           >
-            ▬ VERTICAL<br /><span style="font-size: 0.68rem; opacity: 0.5"
-              >Mouse vs WASD</span
-            >
+            ▬ VERTICAL<br /><span style="font-size: 0.68rem; opacity: 0.5">Mouse vs WASD</span>
           </button>
         </div>
         <div class="row" style="justify-content: center; gap: 6px">
@@ -343,8 +337,7 @@
               letter-spacing: 1px;
               align-self: center;
             "
-            >FIRST TO</span
-          >
+            >FIRST TO</span>
           <button
             class="pick-btn active"
             id="w2-3"
@@ -381,7 +374,7 @@
         <button class="mode-btn" onclick="startGame()">
           START GAME <span id="win-label-2p">First to 7</span>
         </button>
-        <br /><button class="back-btn" onclick="showScreen('screen-menu')">
+        <button class="back-btn" onclick="showScreen('screen-menu')">
           ← Back
         </button>
       </div>
