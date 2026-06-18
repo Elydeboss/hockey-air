@@ -12,10 +12,10 @@ const WALL = 6, PUCK_R = 11, MALLET_R = 28;
 const FRICTION = 0.994, MAX_SPEED = 22, INIT_SPEED = 7;
 const WALL_BOUNCE = 0.88, MALLET_SMOOTH = 0.38;
 const MALLET_IMPULSE_SPEED = 2, MALLET_IMPULSE_BASE = 2.5;
-const LAYOUT = 'horizontal';
-const W = 580, H = 360;
-const GOAL_SIZE = H * 0.42;
-const GOAL_POS = (H - GOAL_SIZE) / 2;
+const LAYOUT = 'vertical';
+const W = 380, H = 620;
+const GOAL_SIZE = W * 0.42;
+const GOAL_POS = (W - GOAL_SIZE) / 2;
 
 // ─── HTTP Server (serves static files) ─────────────────────────────
 const MIME = {
@@ -77,8 +77,8 @@ class Room {
     return {
       puck: { x: W / 2, y: H / 2, vx: 0, vy: 0 },
       mallets: [
-        { x: W * 0.82, y: H / 2, tx: W * 0.82, ty: H / 2, vx: 0, vy: 0 },
-        { x: W * 0.18, y: H / 2, tx: W * 0.18, ty: H / 2, vx: 0, vy: 0 },
+        { x: W / 2, y: H * 0.82, tx: W / 2, ty: H * 0.82, vx: 0, vy: 0 },
+        { x: W / 2, y: H * 0.18, tx: W / 2, ty: H * 0.18, vx: 0, vy: 0 },
       ],
       score: [0, 0],
       goalTimer: 0,
@@ -143,11 +143,11 @@ class Room {
       m.y += m.vy;
 
       if (i === 0) {
-        m.x = this._clamp(m.x, W / 2 + 2, W - WALL - MALLET_R);
-        m.y = this._clamp(m.y, WALL + MALLET_R, H - WALL - MALLET_R);
+        m.x = this._clamp(m.x, WALL + MALLET_R, W - WALL - MALLET_R);
+        m.y = this._clamp(m.y, H / 2 + 2, H - WALL - MALLET_R);
       } else {
-        m.x = this._clamp(m.x, WALL + MALLET_R, W / 2 - 2);
-        m.y = this._clamp(m.y, WALL + MALLET_R, H - WALL - MALLET_R);
+        m.x = this._clamp(m.x, WALL + MALLET_R, W - WALL - MALLET_R);
+        m.y = this._clamp(m.y, WALL + MALLET_R, H / 2 - 2);
       }
     }
 
@@ -168,12 +168,12 @@ class Room {
     if (spd < 0.5) { p.vx += (Math.random() - 0.5) * 0.8; p.vy += (Math.random() - 0.5) * 0.8; }
 
     // ── Wall bounces & goals ──
-    // top/bottom
-    if (p.y - PUCK_R < WALL) { p.y = WALL + PUCK_R; p.vy = Math.abs(p.vy) * WALL_BOUNCE; }
-    if (p.y + PUCK_R > H - WALL) { p.y = H - WALL - PUCK_R; p.vy = -Math.abs(p.vy) * WALL_BOUNCE; }
-    // left wall (red/P2 goal)
-    if (p.x - PUCK_R < WALL) {
-      if (p.y > GOAL_POS && p.y < GOAL_POS + GOAL_SIZE) {
+    // left/right
+    if (p.x - PUCK_R < WALL) { p.x = WALL + PUCK_R; p.vx = Math.abs(p.vx) * WALL_BOUNCE; }
+    if (p.x + PUCK_R > W - WALL) { p.x = W - WALL - PUCK_R; p.vx = -Math.abs(p.vx) * WALL_BOUNCE; }
+    // top wall (green/P1 goal)
+    if (p.y - PUCK_R < WALL) {
+      if (p.x > GOAL_POS && p.x < GOAL_POS + GOAL_SIZE) {
         s.score[0]++;
         if (s.score[0] >= this.winning) { this._gameOver(0); return; }
         s.goalTimer = 45; s.goalColor = '#0f0';
@@ -181,11 +181,11 @@ class Room {
         this._broadcast({ type: 'goal', color: '#0f0', scorer: 0 });
         return;
       }
-      p.x = WALL + PUCK_R; p.vx = Math.abs(p.vx) * WALL_BOUNCE;
+      p.y = WALL + PUCK_R; p.vy = Math.abs(p.vy) * WALL_BOUNCE;
     }
-    // right wall (green/P1 goal)
-    if (p.x + PUCK_R > W - WALL) {
-      if (p.y > GOAL_POS && p.y < GOAL_POS + GOAL_SIZE) {
+    // bottom wall (red/P2 goal)
+    if (p.y + PUCK_R > H - WALL) {
+      if (p.x > GOAL_POS && p.x < GOAL_POS + GOAL_SIZE) {
         s.score[1]++;
         if (s.score[1] >= this.winning) { this._gameOver(1); return; }
         s.goalTimer = 45; s.goalColor = '#f00';
@@ -193,7 +193,7 @@ class Room {
         this._broadcast({ type: 'goal', color: '#f00', scorer: 1 });
         return;
       }
-      p.x = W - WALL - PUCK_R; p.vx = -Math.abs(p.vx) * WALL_BOUNCE;
+      p.y = H - WALL - PUCK_R; p.vy = -Math.abs(p.vy) * WALL_BOUNCE;
     }
 
     // ── Corner escape ──
@@ -245,10 +245,10 @@ class Room {
   _resetPuck(who) {
     const p = this.state.puck;
     p.x = W / 2; p.y = H / 2;
-    const dir = who === 0 ? 1 : -1;
+    const dir = who === 0 ? -1 : 1;
     const a = (Math.random() - 0.5) * Math.PI * 0.5;
-    p.vx = dir * Math.cos(a) * INIT_SPEED;
-    p.vy = Math.sin(a) * INIT_SPEED;
+    p.vx = Math.sin(a) * INIT_SPEED;
+    p.vy = dir * INIT_SPEED;
   }
 
   _gameOver(winner) {

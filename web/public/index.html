@@ -8,21 +8,10 @@
 <meta name="theme-color" content="#000000" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+<script src="https://cdn.tailwindcss.com"></script>
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body { background:#000; overflow:hidden; display:flex; align-items:center; justify-content:center; height:100vh; font-family:monospace; }
-#overlay { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); text-align:center; color:#fff; min-width:300px; z-index:5; }
-#overlay h1 { font-size:1.8rem; letter-spacing:3px; margin-bottom:.3rem; }
-.sub { color:rgba(255,255,255,0.4); font-size:.75rem; letter-spacing:2px; margin-bottom:1.2rem; }
-.mode-btn { display:flex; justify-content:space-between; align-items:center; width:100%; background:transparent; border:1px solid rgba(255,255,255,0.25); color:#fff; padding:12px 20px; font-size:.9rem; font-family:monospace; cursor:pointer; border-radius:4px; margin-bottom:10px; transition:background .15s,border-color .15s; }
-.mode-btn:hover { background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.5); }
-.mode-btn span { color:rgba(255,255,255,0.35); font-size:.8rem; }
-.row { display:flex; gap:8px; margin-bottom:1.2rem; }
-.pick-btn { flex:1; background:transparent; border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.5); padding:10px 4px; font-size:.78rem; font-family:monospace; cursor:pointer; border-radius:4px; line-height:1.6; }
-.pick-btn.active { border-color:#ff0; color:#ff0; text-shadow:0 0 8px #ff0; }
-.pick-btn:hover:not(.active) { border-color:rgba(255,255,255,0.4); color:#fff; }
-.back-btn { background:transparent; border:none; color:rgba(255,255,255,0.3); font-size:.78rem; font-family:monospace; cursor:pointer; margin-top:1.2rem; }
-.back-btn:hover { color:#fff; }
+.pick-btn:not(.active-neon):hover { border-color: rgba(255,255,255,0.4); color: #fff; }
+.active-neon { border-color: #ff0 !important; color: #ff0 !important; text-shadow: 0 0 8px #ff0; }
 </style>
 <script>
 window.env = {
@@ -32,90 +21,67 @@ window.env = {
 };
 </script>
 </head>
-<body>
-<div id="overlay">
+<body class="bg-black overflow-hidden flex items-center justify-center h-screen font-mono">
+<div id="overlay" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-white min-w-[300px] z-10">
   <div id="screen-menu">
-    <h1>AIR HOCKEY</h1>
-    <div class="sub">NEON EDITION</div>
-    <button class="mode-btn" onclick="goMode('ai')">VS Computer <span>1 Player</span></button>
-    <button class="mode-btn" onclick="goMode('2p')">VS Player 2 <span>2 Players</span></button>
-    <button class="mode-btn" onclick="startOnline()">Online <span>Multiplayer</span></button>
-    <button class="mode-btn" id="install-btn" style="display:none;border-color:#ff0;color:#ff0" onclick="installApp()">⬇ Install App <span>Add to Home Screen</span></button>
+    <h1 class="text-2xl tracking-wide mb-1">AIR HOCKEY</h1>
+    <div class="text-white/40 text-xs tracking-wider mb-5">NEON EDITION</div>
+    <button class="flex items-center justify-between w-full bg-transparent border border-white/25 text-white px-5 py-3 text-sm font-mono cursor-pointer rounded mb-2.5 hover:bg-white/10 hover:border-white/50 transition-colors duration-150" onclick="goMode('ai')">VS Computer <span class="text-white/35 text-xs">1 Player</span></button>
+    <button class="flex items-center justify-between w-full bg-transparent border border-white/25 text-white px-5 py-3 text-sm font-mono cursor-pointer rounded mb-2.5 hover:bg-white/10 hover:border-white/50 transition-colors duration-150" onclick="goMode('2p')">VS Player 2 <span class="text-white/35 text-xs">2 Players</span></button>
+    <button class="flex items-center justify-between w-full bg-transparent border border-white/25 text-white px-5 py-3 text-sm font-mono cursor-pointer rounded mb-2.5 hover:bg-white/10 hover:border-white/50 transition-colors duration-150" onclick="startOnline()">Online <span class="text-white/35 text-xs">Multiplayer</span></button>
+    <button class="flex items-center justify-between w-full bg-transparent border border-white/25 text-white px-5 py-3 text-sm font-mono cursor-pointer rounded mb-2.5 hover:bg-white/10 hover:border-white/50 transition-colors duration-150 hidden border-yellow-300 text-yellow-300" id="install-btn" onclick="installApp()">⬇ Install App <span class="text-white/35 text-xs">Add to Home Screen</span></button>
   </div>
-  <div id="screen-mode" style="display:none">
-    <h1 style="font-size:1.2rem;margin-bottom:.3rem">SELECT DIFFICULTY</h1>
-    <div class="sub">VS COMPUTER</div>
-    <div class="row">
-      <button class="pick-btn active" id="d-easy" onclick="setDiff('easy')">EASY</button>
-      <button class="pick-btn" id="d-medium" onclick="setDiff('medium')">MEDIUM</button>
-      <button class="pick-btn" id="d-hard" onclick="setDiff('hard')">HARD</button>
-      <button class="pick-btn" id="d-pro" onclick="setDiff('pro')">PRO</button>
+  <div id="screen-mode" class="hidden">
+    <h1 class="text-base mb-1">SELECT DIFFICULTY</h1>
+    <div class="text-white/40 text-xs tracking-wider mb-5">VS COMPUTER</div>
+    <div class="flex gap-2 mb-5">
+      <button class="flex-1 bg-transparent border border-white/20 text-white/50 px-1 py-2.5 text-xs font-mono cursor-pointer rounded leading-relaxed active-neon" id="d-easy" onclick="setDiff('easy')">EASY</button>
+      <button class="flex-1 bg-transparent border border-white/20 text-white/50 px-1 py-2.5 text-xs font-mono cursor-pointer rounded leading-relaxed" id="d-medium" onclick="setDiff('medium')">MEDIUM</button>
+      <button class="flex-1 bg-transparent border border-white/20 text-white/50 px-1 py-2.5 text-xs font-mono cursor-pointer rounded leading-relaxed" id="d-hard" onclick="setDiff('hard')">HARD</button>
+      <button class="flex-1 bg-transparent border border-white/20 text-white/50 px-1 py-2.5 text-xs font-mono cursor-pointer rounded leading-relaxed" id="d-pro" onclick="setDiff('pro')">PRO</button>
     </div>
-    <button class="mode-btn" onclick="showScreen('screen-layout')">NEXT <span>Choose Layout</span></button>
-    <button class="back-btn" onclick="showScreen('screen-menu')">← Back</button>
+    <div class="flex justify-center gap-1.5 mb-5">
+      <span class="text-white/30 text-[0.7rem] tracking-wider self-center">FIRST TO</span>
+      <button class="bg-transparent border border-white/20 text-white/50 px-3 py-1.5 text-xs font-mono cursor-pointer rounded leading-relaxed active-neon" id="w-3" onclick="setWinning(3)">3</button>
+      <button class="bg-transparent border border-white/20 text-white/50 px-3 py-1.5 text-xs font-mono cursor-pointer rounded leading-relaxed" id="w-5" onclick="setWinning(5)">5</button>
+      <button class="bg-transparent border border-white/20 text-white/50 px-3 py-1.5 text-xs font-mono cursor-pointer rounded leading-relaxed" id="w-7" onclick="setWinning(7)">7</button>
+      <button class="bg-transparent border border-white/20 text-white/50 px-3 py-1.5 text-xs font-mono cursor-pointer rounded leading-relaxed" id="w-10" onclick="setWinning(10)">10</button>
+    </div>
+    <button class="flex items-center justify-between w-full bg-transparent border border-white/25 text-white px-5 py-3 text-sm font-mono cursor-pointer rounded mb-2.5 hover:bg-white/10 hover:border-white/50 transition-colors duration-150" onclick="startGame()">START GAME <span class="text-white/35 text-xs" id="win-label">First to 7</span></button>
+    <button class="bg-transparent border-none text-white/30 text-xs font-mono cursor-pointer mt-5 hover:text-white" onclick="showScreen('screen-menu')">← Back</button>
   </div>
-  <div id="screen-layout" style="display:none">
-    <h1 style="font-size:1.2rem;margin-bottom:.3rem">TABLE LAYOUT</h1>
-    <div class="sub">VS COMPUTER</div>
-    <div class="row">
-      <button class="pick-btn active" id="l-horizontal" onclick="setLayout('horizontal')" style="padding:16px 4px">HORIZONTAL<br><span style="font-size:.68rem;opacity:.5">Landscape</span></button>
-      <button class="pick-btn" id="l-vertical" onclick="setLayout('vertical')" style="padding:16px 4px">VERTICAL<br><span style="font-size:.68rem;opacity:.5">Portrait</span></button>
+  <div id="screen-2p" class="hidden">
+    <h1 class="text-base mb-1">2 PLAYERS</h1>
+    <div class="text-white/40 text-xs tracking-wider mb-5">LOCAL MATCH</div>
+    <div class="flex justify-center gap-1.5 mb-5">
+      <span class="text-white/30 text-[0.7rem] tracking-wider self-center">FIRST TO</span>
+      <button class="bg-transparent border border-white/20 text-white/50 px-3 py-1.5 text-xs font-mono cursor-pointer rounded leading-relaxed active-neon" id="w2-3" onclick="setWinning(3)">3</button>
+      <button class="bg-transparent border border-white/20 text-white/50 px-3 py-1.5 text-xs font-mono cursor-pointer rounded leading-relaxed" id="w2-5" onclick="setWinning(5)">5</button>
+      <button class="bg-transparent border border-white/20 text-white/50 px-3 py-1.5 text-xs font-mono cursor-pointer rounded leading-relaxed" id="w2-7" onclick="setWinning(7)">7</button>
+      <button class="bg-transparent border border-white/20 text-white/50 px-3 py-1.5 text-xs font-mono cursor-pointer rounded leading-relaxed" id="w2-10" onclick="setWinning(10)">10</button>
     </div>
-    <div class="row" style="justify-content:center;gap:6px">
-      <span style="color:rgba(255,255,255,0.3);font-size:.7rem;letter-spacing:1px;align-self:center">FIRST TO</span>
-      <button class="pick-btn active" id="w-3" onclick="setWinning(3)" style="flex:0;padding:6px 12px;font-size:.78rem">3</button>
-      <button class="pick-btn" id="w-5" onclick="setWinning(5)" style="flex:0;padding:6px 12px;font-size:.78rem">5</button>
-      <button class="pick-btn" id="w-7" onclick="setWinning(7)" style="flex:0;padding:6px 12px;font-size:.78rem">7</button>
-      <button class="pick-btn" id="w-10" onclick="setWinning(10)" style="flex:0;padding:6px 12px;font-size:.78rem">10</button>
-    </div>
-    <button class="mode-btn" onclick="startGame()">START GAME <span id="win-label">First to 7</span></button>
-    <button class="back-btn" onclick="showScreen('screen-mode')">← Back</button>
+    <button class="flex items-center justify-between w-full bg-transparent border border-white/25 text-white px-5 py-3 text-sm font-mono cursor-pointer rounded mb-2.5 hover:bg-white/10 hover:border-white/50 transition-colors duration-150" onclick="startGame()">START GAME <span class="text-white/35 text-xs" id="win-label-2p">First to 7</span></button>
+    <button class="bg-transparent border-none text-white/30 text-xs font-mono cursor-pointer mt-5 hover:text-white" onclick="showScreen('screen-menu')">← Back</button>
   </div>
-  <div id="screen-layout-2p" style="display:none">
-    <h1 style="font-size:1.2rem;margin-bottom:.3rem">TABLE LAYOUT</h1>
-    <div class="sub">2 PLAYERS</div>
-    <div class="row">
-      <button class="pick-btn active" id="l2-horizontal" onclick="setLayout('horizontal')" style="padding:16px 4px">HORIZONTAL<br><span style="font-size:.68rem;opacity:.5">Mouse vs WASD</span></button>
-      <button class="pick-btn" id="l2-vertical" onclick="setLayout('vertical')" style="padding:16px 4px">VERTICAL<br><span style="font-size:.68rem;opacity:.5">Mouse vs WASD</span></button>
-    </div>
-    <div class="row" style="justify-content:center;gap:6px">
-      <span style="color:rgba(255,255,255,0.3);font-size:.7rem;letter-spacing:1px;align-self:center">FIRST TO</span>
-      <button class="pick-btn active" id="w2-3" onclick="setWinning(3)" style="flex:0;padding:6px 12px;font-size:.78rem">3</button>
-      <button class="pick-btn" id="w2-5" onclick="setWinning(5)" style="flex:0;padding:6px 12px;font-size:.78rem">5</button>
-      <button class="pick-btn" id="w2-7" onclick="setWinning(7)" style="flex:0;padding:6px 12px;font-size:.78rem">7</button>
-      <button class="pick-btn" id="w2-10" onclick="setWinning(10)" style="flex:0;padding:6px 12px;font-size:.78rem">10</button>
-    </div>
-    <button class="mode-btn" onclick="startGame()">START GAME <span id="win-label-2p">First to 7</span></button>
-    <button class="back-btn" onclick="showScreen('screen-menu')">← Back</button>
-  </div>
-
 </div>
 <script>
-let selectedDiff = "easy", selectedLayout = "horizontal", selectedWinning = 7, selectedMode = "ai";
+let selectedDiff = "easy", selectedWinning = 7, selectedMode = "ai";
 
 function showScreen(id) {
-  ["screen-menu","screen-mode","screen-layout","screen-layout-2p"].forEach(s => {
-    document.getElementById(s).style.display = s === id ? "block" : "none";
+  ["screen-menu","screen-mode","screen-2p"].forEach(s => {
+    document.getElementById(s).classList.toggle("hidden", s !== id);
   });
 }
 function setDiff(d) {
   selectedDiff = d;
-  ["easy","medium","hard","pro"].forEach(x => document.getElementById("d-"+x).classList.toggle("active", x === d));
-}
-function setLayout(l) {
-  selectedLayout = l;
-  ["horizontal","vertical"].forEach(x => {
-    let e1 = document.getElementById("l-"+x), e2 = document.getElementById("l2-"+x);
-    if (e1) e1.classList.toggle("active", x === l);
-    if (e2) e2.classList.toggle("active", x === l);
-  });
+  ["easy","medium","hard","pro"].forEach(x => document.getElementById("d-"+x).classList.toggle("active-neon", x === d));
 }
 function setWinning(n) {
   selectedWinning = n;
   [3,5,7,10].forEach(x => {
     let e1 = document.getElementById("w-"+x), e2 = document.getElementById("w2-"+x);
-    if (e1) e1.classList.toggle("active", x === n);
-    if (e2) e2.classList.toggle("active", x === n);
+    if (e1) e1.classList.toggle("active-neon", x === n);
+    if (e2) e2.classList.toggle("active-neon", x === n);
   });
   let label = "First to " + n;
   let el = document.getElementById("win-label");
@@ -125,11 +91,10 @@ function setWinning(n) {
 }
 function goMode(m) {
   selectedMode = m;
-  if (m === "2p") showScreen("screen-layout-2p");
-  else showScreen("screen-mode");
+  showScreen(m === "2p" ? "screen-2p" : "screen-mode");
 }
 function startGame() {
-  window.location.href = "game.html?mode=" + selectedMode + "&difficulty=" + selectedDiff + "&layout=" + selectedLayout + "&winning=" + selectedWinning;
+  window.location.href = "game.html?mode=" + selectedMode + "&difficulty=" + selectedDiff + "&winning=" + selectedWinning;
 }
 let deferredPrompt = null;
 function installApp() {
@@ -141,11 +106,11 @@ function installApp() {
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
-  document.getElementById('install-btn').style.display = 'flex';
+  document.getElementById('install-btn').classList.remove('hidden');
 });
 window.addEventListener('appinstalled', () => {
   deferredPrompt = null;
-  document.getElementById('install-btn').style.display = 'none';
+  document.getElementById('install-btn').classList.add('hidden');
 });
 function startOnline() {
   window.location.href = "game.html?mode=online";
