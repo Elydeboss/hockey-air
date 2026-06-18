@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#000000" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:#000; overflow:hidden; display:flex; align-items:center; justify-content:center; height:100vh; font-family:monospace; }
@@ -127,6 +131,9 @@ function startGame() {
 }
 function startOnline() {
   window.location.href = "game.html?mode=online";
+}
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js');
 }
 </script>
 </body>

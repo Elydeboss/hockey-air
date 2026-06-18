@@ -1,0 +1,26 @@
+{
+  "lang": "en",
+  "name": "Air Hockey Neon",
+  "short_name": "Air Hockey",
+  "description": "Neon-themed air hockey game with AI, local 2-player, and online multiplayer",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#000000",
+  "background_color": "#000000",
+  "categories": ["games", "sports"],
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
