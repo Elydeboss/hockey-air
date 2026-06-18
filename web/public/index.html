@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
 <link rel="manifest" href="/manifest.json" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
 <meta name="theme-color" content="#000000" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
@@ -39,6 +40,7 @@ window.env = {
     <button class="mode-btn" onclick="goMode('ai')">VS Computer <span>1 Player</span></button>
     <button class="mode-btn" onclick="goMode('2p')">VS Player 2 <span>2 Players</span></button>
     <button class="mode-btn" onclick="startOnline()">Online <span>Multiplayer</span></button>
+    <button class="mode-btn" id="install-btn" style="display:none;border-color:#ff0;color:#ff0" onclick="installApp()">⬇ Install App <span>Add to Home Screen</span></button>
   </div>
   <div id="screen-mode" style="display:none">
     <h1 style="font-size:1.2rem;margin-bottom:.3rem">SELECT DIFFICULTY</h1>
@@ -129,6 +131,22 @@ function goMode(m) {
 function startGame() {
   window.location.href = "game.html?mode=" + selectedMode + "&difficulty=" + selectedDiff + "&layout=" + selectedLayout + "&winning=" + selectedWinning;
 }
+let deferredPrompt = null;
+function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+  }
+}
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-btn').style.display = 'flex';
+});
+window.addEventListener('appinstalled', () => {
+  deferredPrompt = null;
+  document.getElementById('install-btn').style.display = 'none';
+});
 function startOnline() {
   window.location.href = "game.html?mode=online";
 }

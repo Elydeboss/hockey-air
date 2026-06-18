@@ -7,6 +7,7 @@
       content="width=device-width,initial-scale=1,user-scalable=no"
     />
     <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
     <meta name="theme-color" content="#000000" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
@@ -372,6 +373,7 @@
           ▶ Resume
         </button>
         <button class="pause-btn" onclick="restartGame()">↺ Restart</button>
+        <button class="pause-btn" id="install-btn" style="display:none;border-color:#ff0;color:#ff0" onclick="installApp()">⬇ Install App</button>
         <button class="pause-btn" onclick="mainMenu()">⌂ Main Menu</button>
       </div>
     </div>
@@ -824,7 +826,7 @@
           ws.close();
           ws = null;
         }
-        window.location.href = "index.html";
+        window.location.href = "/";
       }
 
       function rematch() {
@@ -1770,6 +1772,24 @@
         selectedWinning = parseInt(pageParams.get("winning")) || 7;
         startGame();
       }
+      let deferredPrompt = null;
+      function installApp() {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+        }
+      }
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        const btn = document.getElementById('install-btn');
+        if (btn) btn.style.display = 'block';
+      });
+      window.addEventListener('appinstalled', () => {
+        deferredPrompt = null;
+        const btn = document.getElementById('install-btn');
+        if (btn) btn.style.display = 'none';
+      });
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js');
       }
