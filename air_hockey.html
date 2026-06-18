@@ -615,6 +615,8 @@
         paused = false;
         goalTimer = 0;
         lastHitter = -1;
+        Object.keys(keys).forEach(k => delete keys[k]);
+        touches = {};
         placeMallets();
         resetPuck(0);
       }
@@ -631,6 +633,8 @@
         gameActive = true;
         goalTimer = 0;
         lastHitter = -1;
+        Object.keys(keys).forEach(k => delete keys[k]);
+        touches = {};
         placeMallets();
         resetPuck(0);
       }
@@ -652,6 +656,8 @@
         paused = false;
         goalTimer = 0;
         lastHitter = -1;
+        Object.keys(keys).forEach(k => delete keys[k]);
+        touches = {};
         placeMallets();
         resetPuck(0);
       }
@@ -845,27 +851,18 @@
             let steps = Math.abs(
               (puck.x - m.x) / Math.max(Math.abs(puck.vx), 0.1),
             );
+            tx = clamp(puck.x - W * 0.1, WALL + m.r, W / 2 - m.r);
             ty = clamp(
               puck.y + puck.vy * steps * d.predict,
               WALL + m.r,
               H - WALL - m.r,
             );
-            tx = clamp(puck.x - W * 0.1, WALL + m.r, W / 2 - m.r);
           } else {
-            tx = W * 0.18;
-            ty = H / 2;
+            let puckAdvance = (puck.x - (WALL + m.r)) / (W / 2 - m.r - (WALL + m.r));
+            puckAdvance = clamp(puckAdvance, 0, 1);
+            ty = puck.y * (1 - puckAdvance * 0.4) + (H / 2) * (puckAdvance * 0.4);
+            tx = WALL + m.r + (W / 2 - m.r - WALL - m.r) * (1 - puckAdvance * 0.3);
           }
-          let vx = (tx - m.x) * d.react * AI_REACT_BASE,
-            vy = (ty - m.y) * d.react * AI_REACT_BASE;
-          let spd = Math.hypot(vx, vy);
-          if (spd > d.maxSpd) {
-            vx = (vx / spd) * d.maxSpd;
-            vy = (vy / spd) * d.maxSpd;
-          }
-          m.vx = vx;
-          m.vy = vy;
-          m.x = clamp(m.x + vx, WALL + m.r, W / 2 - 2);
-          m.y = clamp(m.y + vy, WALL + m.r, H - WALL - m.r);
         } else {
           if (puck.vy < 0 && d.predict > 0) {
             let steps = Math.abs(
@@ -878,18 +875,29 @@
             );
             ty = clamp(puck.y - H * 0.1, WALL + m.r, H / 2 - m.r);
           } else {
-            tx = W / 2;
-            ty = H * 0.18;
+            let puckAdvance = (puck.y - (WALL + m.r)) / (H / 2 - m.r - (WALL + m.r));
+            puckAdvance = clamp(puckAdvance, 0, 1);
+            tx = puck.x * (1 - puckAdvance * 0.4) + (W / 2) * (puckAdvance * 0.4);
+            ty = WALL + m.r + (H / 2 - m.r - WALL - m.r) * (1 - puckAdvance * 0.3);
           }
-          let vx = (tx - m.x) * d.react * AI_REACT_BASE,
-            vy = (ty - m.y) * d.react * AI_REACT_BASE;
-          let spd = Math.hypot(vx, vy);
-          if (spd > d.maxSpd) {
-            vx = (vx / spd) * d.maxSpd;
-            vy = (vy / spd) * d.maxSpd;
-          }
-          m.vx = vx;
-          m.vy = vy;
+        }
+        tx += (Math.random() - 0.5) * 2;
+        ty += (Math.random() - 0.5) * 2;
+        tx = clamp(tx, WALL + m.r, layout === "horizontal" ? W / 2 - m.r : W - WALL - m.r);
+        ty = clamp(ty, WALL + m.r, layout === "horizontal" ? H - WALL - m.r : H / 2 - m.r);
+        let vx = (tx - m.x) * d.react * AI_REACT_BASE,
+          vy = (ty - m.y) * d.react * AI_REACT_BASE;
+        let spd = Math.hypot(vx, vy);
+        if (spd > d.maxSpd) {
+          vx = (vx / spd) * d.maxSpd;
+          vy = (vy / spd) * d.maxSpd;
+        }
+        m.vx = vx;
+        m.vy = vy;
+        if (layout === "horizontal") {
+          m.x = clamp(m.x + vx, WALL + m.r, W / 2 - 2);
+          m.y = clamp(m.y + vy, WALL + m.r, H - WALL - m.r);
+        } else {
           m.x = clamp(m.x + vx, WALL + m.r, W - WALL - m.r);
           m.y = clamp(m.y + vy, WALL + m.r, H / 2 - 2);
         }
@@ -901,6 +909,11 @@
           dy = m.ty - m.y;
         m.vx = dx * MALLET_SMOOTH;
         m.vy = dy * MALLET_SMOOTH;
+        let mSpd = Math.hypot(m.vx, m.vy);
+        if (mSpd > MAX_SPEED * 2) {
+          m.vx = (m.vx / mSpd) * MAX_SPEED * 2;
+          m.vy = (m.vy / mSpd) * MAX_SPEED * 2;
+        }
         m.x += m.vx;
         m.y += m.vy;
         if (layout === "horizontal") {
@@ -1019,26 +1032,6 @@
           }
           if (puck.y - puck.r < WALL) {
             if (puck.x > GOAL_POS && puck.x < GOAL_POS + GOAL_SIZE) {
-              score[1]++;
-              spawnSparks(puck.x, puck.y, "#f00", 30);
-              sndGoal();
-              if (score[1] >= WINNING) {
-                gameActive = false;
-                endGame(1);
-              } else {
-                goalTimer = 45;
-                goalColor = "#f00";
-                pendingReset = 0;
-              }
-              return;
-            }
-            puck.y = WALL + puck.r;
-            puck.vy = Math.abs(puck.vy) * WALL_BOUNCE;
-            spawnSparks(puck.x, WALL, "#fff");
-            sndWall();
-          }
-          if (puck.y + puck.r > H - WALL) {
-            if (puck.x > GOAL_POS && puck.x < GOAL_POS + GOAL_SIZE) {
               score[0]++;
               spawnSparks(puck.x, puck.y, "#0f0", 30);
               sndGoal();
@@ -1052,10 +1045,43 @@
               }
               return;
             }
+            puck.y = WALL + puck.r;
+            puck.vy = Math.abs(puck.vy) * WALL_BOUNCE;
+            spawnSparks(puck.x, WALL, "#fff");
+            sndWall();
+          }
+          if (puck.y + puck.r > H - WALL) {
+            if (puck.x > GOAL_POS && puck.x < GOAL_POS + GOAL_SIZE) {
+              score[1]++;
+              spawnSparks(puck.x, puck.y, "#f00", 30);
+              sndGoal();
+              if (score[1] >= WINNING) {
+                gameActive = false;
+                endGame(1);
+              } else {
+                goalTimer = 45;
+                goalColor = "#f00";
+                pendingReset = 0;
+              }
+              return;
+            }
             puck.y = H - WALL - puck.r;
             puck.vy = -Math.abs(puck.vy) * WALL_BOUNCE;
             spawnSparks(puck.x, H - WALL, "#fff");
             sndWall();
+          }
+        }
+        // ── Corner escape ──
+        if (Math.hypot(puck.vx, puck.vy) < 6) {
+          const Z = 55, N = 4;
+          if (puck.x - WALL < Z && puck.y - WALL < Z) {
+            puck.vx += N; puck.vy += N;
+          } else if (W - WALL - puck.x < Z && puck.y - WALL < Z) {
+            puck.vx -= N; puck.vy += N;
+          } else if (puck.x - WALL < Z && H - WALL - puck.y < Z) {
+            puck.vx += N; puck.vy -= N;
+          } else if (W - WALL - puck.x < Z && H - WALL - puck.y < Z) {
+            puck.vx -= N; puck.vy -= N;
           }
         }
         for (let i = 0; i < 2; i++) {
@@ -1069,10 +1095,20 @@
             // Push out of wall if mallet shoved puck into it
             if (layout === "horizontal") {
               if (puck.x - puck.r < WALL) {
+                if (puck.y > GOAL_POS && puck.y < GOAL_POS + GOAL_SIZE) {
+                  score[0]++; spawnSparks(puck.x, puck.y, "#0f0", 30); sndGoal();
+                  if (score[0] >= WINNING) { gameActive = false; endGame(0); return; }
+                  goalTimer = 45; goalColor = "#0f0"; pendingReset = 1; return;
+                }
                 puck.x = WALL + puck.r;
                 puck.vx = Math.abs(puck.vx) * WALL_BOUNCE;
               }
               if (puck.x + puck.r > W - WALL) {
+                if (puck.y > GOAL_POS && puck.y < GOAL_POS + GOAL_SIZE) {
+                  score[1]++; spawnSparks(puck.x, puck.y, "#f00", 30); sndGoal();
+                  if (score[1] >= WINNING) { gameActive = false; endGame(1); return; }
+                  goalTimer = 45; goalColor = "#f00"; pendingReset = 0; return;
+                }
                 puck.x = W - WALL - puck.r;
                 puck.vx = -Math.abs(puck.vx) * WALL_BOUNCE;
               }
@@ -1086,10 +1122,20 @@
               }
             } else {
               if (puck.y - puck.r < WALL) {
+                if (puck.x > GOAL_POS && puck.x < GOAL_POS + GOAL_SIZE) {
+                  score[0]++; spawnSparks(puck.x, puck.y, "#0f0", 30); sndGoal();
+                  if (score[0] >= WINNING) { gameActive = false; endGame(0); return; }
+                  goalTimer = 45; goalColor = "#0f0"; pendingReset = 1; return;
+                }
                 puck.y = WALL + puck.r;
                 puck.vy = Math.abs(puck.vy) * WALL_BOUNCE;
               }
               if (puck.y + puck.r > H - WALL) {
+                if (puck.x > GOAL_POS && puck.x < GOAL_POS + GOAL_SIZE) {
+                  score[1]++; spawnSparks(puck.x, puck.y, "#f00", 30); sndGoal();
+                  if (score[1] >= WINNING) { gameActive = false; endGame(1); return; }
+                  goalTimer = 45; goalColor = "#f00"; pendingReset = 0; return;
+                }
                 puck.y = H - WALL - puck.r;
                 puck.vy = -Math.abs(puck.vy) * WALL_BOUNCE;
               }

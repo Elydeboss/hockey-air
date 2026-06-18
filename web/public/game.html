@@ -696,6 +696,9 @@
         lastHitter = -1;
         trail = [];
         sparks = [];
+        Object.keys(keys).forEach(k => delete keys[k]);
+        touches = {};
+        placeMallets();
       }
 
       function applyOnlineState(msg) {
@@ -780,6 +783,8 @@
         shakeTimer = 0;
         shakeIntensity = 0;
         scorePopTimer = [0, 0];
+        Object.keys(keys).forEach(k => delete keys[k]);
+        touches = {};
         placeMallets();
         resetPuck(0);
       }
@@ -804,6 +809,8 @@
         shakeTimer = 0;
         shakeIntensity = 0;
         scorePopTimer = [0, 0];
+        Object.keys(keys).forEach(k => delete keys[k]);
+        touches = {};
         placeMallets();
         resetPuck(0);
       }
@@ -831,6 +838,8 @@
         shakeTimer = 0;
         shakeIntensity = 0;
         scorePopTimer = [0, 0];
+        Object.keys(keys).forEach(k => delete keys[k]);
+        touches = {};
         placeMallets();
         resetPuck(0);
       }
@@ -1015,6 +1024,7 @@
           let rawTx, rawTy;
 
           if (layout === "horizontal") {
+            // Puck coming toward AI - predict intercept
             if (puck.vx < 0 && d.predict > 0) {
               let steps = Math.abs(
                 (puck.x - m.x) / Math.max(Math.abs(puck.vx), 0.1),
@@ -1022,14 +1032,18 @@
               rawTy = puck.y + puck.vy * steps * d.predict;
               rawTx = puck.x - W * 0.1;
             } else {
-              rawTx = puck.x - W * 0.12;
-              rawTy = puck.y;
+              // Puck moving away or stationary - defensive positioning
+              let puckAdvance = (puck.x - (WALL + m.r)) / (W / 2 - m.r - (WALL + m.r));
+              puckAdvance = clamp(puckAdvance, 0, 1);
+              rawTy = puck.y * (1 - puckAdvance * 0.5) + (H / 2) * (puckAdvance * 0.5);
+              rawTx = WALL + m.r + (W / 2 - m.r - WALL - m.r) * (1 - puckAdvance * 0.3);
             }
             rawTx += (Math.random() - 0.5) * d.inaccuracy * W * 0.2;
             rawTy += (Math.random() - 0.5) * d.inaccuracy * H * 0.2;
             rawTx = clamp(rawTx, WALL + m.r, W / 2 - m.r);
             rawTy = clamp(rawTy, WALL + m.r, H - WALL - m.r);
           } else {
+            // Vertical layout
             if (puck.vy < 0 && d.predict > 0) {
               let steps = Math.abs(
                 (puck.y - m.y) / Math.max(Math.abs(puck.vy), 0.1),
@@ -1037,8 +1051,10 @@
               rawTx = puck.x + puck.vx * steps * d.predict;
               rawTy = puck.y - H * 0.1;
             } else {
-              rawTx = puck.x;
-              rawTy = puck.y - H * 0.12;
+              let puckAdvance = (puck.y - (WALL + m.r)) / (H / 2 - m.r - (WALL + m.r));
+              puckAdvance = clamp(puckAdvance, 0, 1);
+              rawTx = puck.x * (1 - puckAdvance * 0.5) + (W / 2) * (puckAdvance * 0.5);
+              rawTy = WALL + m.r + (H / 2 - m.r - WALL - m.r) * (1 - puckAdvance * 0.3);
             }
             rawTx += (Math.random() - 0.5) * d.inaccuracy * W * 0.2;
             rawTy += (Math.random() - 0.5) * d.inaccuracy * H * 0.2;
@@ -1047,7 +1063,7 @@
           }
 
           // ── Corner awareness ──
-          const CORNER_ZONE = 45;
+          const CORNER_ZONE = 50;
           const puckInCorner =
             (puck.x - WALL < CORNER_ZONE && puck.y - WALL < CORNER_ZONE) ||
             (layout === "horizontal"
@@ -1058,48 +1074,45 @@
               ? false
               : W - WALL - puck.x < CORNER_ZONE &&
                 H - WALL - puck.y < CORNER_ZONE);
-          if (puckInCorner && Math.hypot(puck.vx, puck.vy) < 5) {
-            const margin = 40;
-            if (layout === "horizontal") {
-              rawTx = clamp(puck.x, WALL + margin, W / 2 - margin);
-              rawTy = clamp(puck.y, WALL + margin, H - WALL - margin);
-            } else {
-              rawTx = clamp(puck.x, WALL + margin, W - WALL - margin);
-              rawTy = clamp(puck.y, WALL + margin, H / 2 - margin);
-            }
+          if (puckInCorner && Math.hypot(puck.vx, puck.vy) < 8) {
+            rawTx = clamp(puck.x, WALL + m.r, layout === "horizontal" ? W / 2 - m.r : W - WALL - m.r);
+            rawTy = clamp(puck.y, WALL + m.r, layout === "horizontal" ? H - WALL - m.r : H / 2 - m.r);
           }
 
-          // Blend toward new target (smooth transition, no instant snap)
-          let blend = Math.min(1, aiTargetAge / 20 + 0.15);
+          // Smooth blend toward new target (always smooth, never snaps)
+          let blend = 0.08 + d.react * 0.06;
           aiTargetX = aiTargetX + (rawTx - aiTargetX) * blend;
           aiTargetY = aiTargetY + (rawTy - aiTargetY) * blend;
           aiTargetAge = Math.min(aiTargetAge + 1, 9999);
         }
 
-        // ── Move toward target (no rush boost, constant speed) ──
-        let vx = (aiTargetX - m.x) * d.react * AI_REACT_BASE;
-        let vy = (aiTargetY - m.y) * d.react * AI_REACT_BASE;
+        // ── Small jitter to prevent getting stuck on one pixel ──
+        let jx = (Math.random() - 0.5) * 1.5;
+        let jy = (Math.random() - 0.5) * 1.5;
+
+        // ── Move toward target ──
+        let vx = ((aiTargetX + jx) - m.x) * d.react * AI_REACT_BASE;
+        let vy = ((aiTargetY + jy) - m.y) * d.react * AI_REACT_BASE;
         let spd = Math.hypot(vx, vy);
         if (spd > d.maxSpd) {
           vx = (vx / spd) * d.maxSpd;
           vy = (vy / spd) * d.maxSpd;
         }
 
-        // ── Shot power (only when puck is touching, wider aim, lower power) ──
-        if (distToPuck < m.r + puck.r + 6) {
+        // ── Shot power (subtle, doesn't override movement) ──
+        if (distToPuck < m.r + puck.r + 8) {
           let aimX, aimY;
           if (layout === "horizontal") {
             aimX = W - WALL - m.r;
-            aimY = puck.y + (Math.random() - 0.5) * GOAL_SIZE * 0.8;
-            vx += (aimX - puck.x) * d.hitPower * 0.18;
-            vy += (aimY - puck.y) * d.hitPower * 0.12;
+            aimY = puck.y + (Math.random() - 0.5) * GOAL_SIZE * 0.6;
+            vx += (aimX - puck.x) * d.hitPower * 0.12;
+            vy += (aimY - puck.y) * d.hitPower * 0.08;
           } else {
             aimY = H - WALL - m.r;
-            aimX = puck.x + (Math.random() - 0.5) * GOAL_SIZE * 0.8;
-            vx += (aimX - puck.x) * d.hitPower * 0.12;
-            vy += (aimY - puck.y) * d.hitPower * 0.18;
+            aimX = puck.x + (Math.random() - 0.5) * GOAL_SIZE * 0.6;
+            vx += (aimX - puck.x) * d.hitPower * 0.08;
+            vy += (aimY - puck.y) * d.hitPower * 0.12;
           }
-          // No speed cap overshoot — stays within maxSpd
           let spd2 = Math.hypot(vx, vy);
           if (spd2 > d.maxSpd) {
             vx = (vx / spd2) * d.maxSpd;
@@ -1124,6 +1137,11 @@
           dy = m.ty - m.y;
         m.vx = dx * MALLET_SMOOTH;
         m.vy = dy * MALLET_SMOOTH;
+        let mSpd = Math.hypot(m.vx, m.vy);
+        if (mSpd > MAX_SPEED * 2) {
+          m.vx = (m.vx / mSpd) * MAX_SPEED * 2;
+          m.vy = (m.vy / mSpd) * MAX_SPEED * 2;
+        }
         m.x += m.vx;
         m.y += m.vy;
         if (layout === "horizontal") {
@@ -1241,27 +1259,6 @@
           }
           if (puck.y - puck.r < WALL) {
             if (puck.x > GOAL_POS && puck.x < GOAL_POS + GOAL_SIZE) {
-              score[1]++;
-              scorePopTimer[1] = 20;
-              spawnSparks(puck.x, puck.y, "#f00", 30);
-              sndGoal();
-              if (score[1] >= WINNING) {
-                gameActive = false;
-                endGame(1);
-              } else {
-                goalTimer = 45;
-                goalColor = "#f00";
-                pendingReset = 0;
-              }
-              return;
-            }
-            puck.y = WALL + puck.r;
-            puck.vy = Math.abs(puck.vy) * WALL_BOUNCE;
-            spawnSparks(puck.x, WALL, "#fff");
-            sndWall();
-          }
-          if (puck.y + puck.r > H - WALL) {
-            if (puck.x > GOAL_POS && puck.x < GOAL_POS + GOAL_SIZE) {
               score[0]++;
               scorePopTimer[0] = 20;
               spawnSparks(puck.x, puck.y, "#0f0", 30);
@@ -1276,6 +1273,27 @@
               }
               return;
             }
+            puck.y = WALL + puck.r;
+            puck.vy = Math.abs(puck.vy) * WALL_BOUNCE;
+            spawnSparks(puck.x, WALL, "#fff");
+            sndWall();
+          }
+          if (puck.y + puck.r > H - WALL) {
+            if (puck.x > GOAL_POS && puck.x < GOAL_POS + GOAL_SIZE) {
+              score[1]++;
+              scorePopTimer[1] = 20;
+              spawnSparks(puck.x, puck.y, "#f00", 30);
+              sndGoal();
+              if (score[1] >= WINNING) {
+                gameActive = false;
+                endGame(1);
+              } else {
+                goalTimer = 45;
+                goalColor = "#f00";
+                pendingReset = 0;
+              }
+              return;
+            }
             puck.y = H - WALL - puck.r;
             puck.vy = -Math.abs(puck.vy) * WALL_BOUNCE;
             spawnSparks(puck.x, H - WALL, "#fff");
@@ -1283,9 +1301,9 @@
           }
         }
         // ── Corner escape ──
-        if (Math.hypot(puck.vx, puck.vy) < 3) {
-          const Z = 40,
-            N = 2;
+        if (Math.hypot(puck.vx, puck.vy) < 6) {
+          const Z = 55,
+            N = 4;
           if (puck.x - WALL < Z && puck.y - WALL < Z) {
             puck.vx += N;
             puck.vy += N;
@@ -1310,10 +1328,20 @@
             puck.y += ny * (puck.r + m.r - d2);
             if (layout === "horizontal") {
               if (puck.x - puck.r < WALL) {
+                if (puck.y > GOAL_POS && puck.y < GOAL_POS + GOAL_SIZE) {
+                  score[0]++; scorePopTimer[0] = 20; spawnSparks(puck.x, puck.y, "#0f0", 30); sndGoal();
+                  if (score[0] >= WINNING) { gameActive = false; endGame(0); return; }
+                  goalTimer = 45; goalColor = "#0f0"; pendingReset = 1; return;
+                }
                 puck.x = WALL + puck.r;
                 puck.vx = Math.abs(puck.vx) * WALL_BOUNCE;
               }
               if (puck.x + puck.r > W - WALL) {
+                if (puck.y > GOAL_POS && puck.y < GOAL_POS + GOAL_SIZE) {
+                  score[1]++; scorePopTimer[1] = 20; spawnSparks(puck.x, puck.y, "#f00", 30); sndGoal();
+                  if (score[1] >= WINNING) { gameActive = false; endGame(1); return; }
+                  goalTimer = 45; goalColor = "#f00"; pendingReset = 0; return;
+                }
                 puck.x = W - WALL - puck.r;
                 puck.vx = -Math.abs(puck.vx) * WALL_BOUNCE;
               }
@@ -1327,10 +1355,20 @@
               }
             } else {
               if (puck.y - puck.r < WALL) {
+                if (puck.x > GOAL_POS && puck.x < GOAL_POS + GOAL_SIZE) {
+                  score[0]++; scorePopTimer[0] = 20; spawnSparks(puck.x, puck.y, "#0f0", 30); sndGoal();
+                  if (score[0] >= WINNING) { gameActive = false; endGame(0); return; }
+                  goalTimer = 45; goalColor = "#0f0"; pendingReset = 1; return;
+                }
                 puck.y = WALL + puck.r;
                 puck.vy = Math.abs(puck.vy) * WALL_BOUNCE;
               }
               if (puck.y + puck.r > H - WALL) {
+                if (puck.x > GOAL_POS && puck.x < GOAL_POS + GOAL_SIZE) {
+                  score[1]++; scorePopTimer[1] = 20; spawnSparks(puck.x, puck.y, "#f00", 30); sndGoal();
+                  if (score[1] >= WINNING) { gameActive = false; endGame(1); return; }
+                  goalTimer = 45; goalColor = "#f00"; pendingReset = 0; return;
+                }
                 puck.y = H - WALL - puck.r;
                 puck.vy = -Math.abs(puck.vy) * WALL_BOUNCE;
               }
