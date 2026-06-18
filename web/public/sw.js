@@ -3,6 +3,7 @@ const CACHE = "air-hockey-v1";
 const PRECACHE = [
   "/",
   "/index.html",
+  "/game",
   "/game.html",
   "/manifest.json",
   "/icons/icon-192x192.png",
@@ -11,7 +12,10 @@ const PRECACHE = [
 
 self.addEventListener("install", (e) => {
   e.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)).then(self.skipWaiting()),
+    caches
+      .open(CACHE)
+      .then((cache) => cache.addAll(PRECACHE))
+      .then(self.skipWaiting()),
   );
 });
 

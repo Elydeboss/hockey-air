@@ -3,7 +3,7 @@
   "name": "Air Hockey Neon",
   "short_name": "Air Hockey",
   "description": "Neon-themed air hockey game with AI, local 2-player, and online multiplayer",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
@@ -14,7 +14,8 @@
     {
       "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-512x512.png",

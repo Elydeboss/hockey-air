@@ -25,7 +25,12 @@ const MIME = {
 };
 
 const server = http.createServer((req, res) => {
-  let filePath = path.join(__dirname, 'public', req.url === '/' ? 'index.html' : req.url);
+  let urlPath = req.url === '/' ? 'index.html' : req.url;
+  // Handle clean URLs (no extension) — try .html
+  if (!path.extname(urlPath) && urlPath !== '/sw.js') {
+    urlPath += '.html';
+  }
+  let filePath = path.join(__dirname, 'public', urlPath);
   const ext = path.extname(filePath);
   fs.readFile(filePath, (err, data) => {
     if (err) {
