@@ -22,7 +22,17 @@ const server = http.createServer((req, res) => {
 });
 
 // ─── WebSocket Server ──────────────────────────────────────────────
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({
+  server,
+  verifyClient: (info, cb) => {
+    const origin = info.origin || info.req.headers.origin;
+    if (!origin || origin.includes('hockey-air.onrender.com') || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      cb(true);
+    } else {
+      cb(false, 403, 'Forbidden');
+    }
+  },
+});
 
 // ─── Room Management ───────────────────────────────────────────────
 const rooms = new Map();
@@ -190,8 +200,9 @@ class Room {
     // ── Mallet-puck collisions ──
     for (let i = 0; i < 2; i++) {
       const m = s.mallets[i];
-      const d2 = this._dist(p, m);
+      let d2 = this._dist(p, m);
       if (d2 < PUCK_R + MALLET_R) {
+        if (d2 < 0.001) d2 = 0.001;
         const nx = (p.x - m.x) / d2;
         const ny = (p.y - m.y) / d2;
         p.x += nx * (PUCK_R + MALLET_R - d2);
@@ -288,7 +299,8 @@ wss.on('connection', (ws) => {
       case 'create_room': {
         if (currentRoom) return;
         const code = generateCode();
-        const room = new Room(code, msg.winning || 7);
+        const winning = Math.max(1, Math.min(99, msg.winning || 7));
+        const room = new Room(code, winning);
         room.players[0] = ws;
         rooms.set(code, room);
         roomCodes.add(code);

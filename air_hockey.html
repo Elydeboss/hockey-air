@@ -441,7 +441,6 @@
           vy: 0,
           r: MALLET_R,
           color: "#0f0",
-          glow: "#0f0",
         },
         {
           x: 0,
@@ -452,7 +451,6 @@
           vy: 0,
           r: MALLET_R,
           color: "#f00",
-          glow: "#f00",
         },
       ];
 
@@ -467,7 +465,9 @@
         if (!audioCtx) {
           try {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-          } catch (e) {}
+          } catch (e) {
+            console.warn('Audio init failed:', e);
+          }
         }
       }
       function playTone(freq, dur, type, vol) {
@@ -487,7 +487,9 @@
           gain.connect(audioCtx.destination);
           osc.start();
           osc.stop(audioCtx.currentTime + (dur || 0.1));
-        } catch (e) {}
+        } catch (e) {
+          console.warn('playTone error:', e);
+        }
       }
       function sndWall() {
         playTone(220, 0.07, "square", 0.06);
@@ -845,7 +847,7 @@
         let d = DIFF[difficulty],
           m = mallets[1];
         if (Math.random() < d.mistake) return;
-        let tx, ty;
+        let tx = m.x, ty = m.y;
         if (layout === "horizontal") {
           if (puck.vx < 0 && d.predict > 0) {
             let steps = Math.abs(
@@ -1088,6 +1090,7 @@
           let m = mallets[i],
             d2 = dist(puck, m);
           if (d2 < puck.r + m.r) {
+            if (d2 < 0.001) d2 = 0.001;
             let nx = (puck.x - m.x) / d2,
               ny = (puck.y - m.y) / d2;
             puck.x += nx * (puck.r + m.r - d2);
@@ -1189,12 +1192,10 @@
         wt.style.textShadow = `0 0 28px ${c}`;
         if (mode === "ai") {
           wt.textContent = winner === 0 ? "You Win!" : "Computer Wins!";
-          ws.innerHTML = `Score: ${score[0]} – ${
-            score[1]
-          }<br>Difficulty: ${difficulty.toUpperCase()}`;
+          ws.textContent = `Score: ${score[0]} – ${score[1]} — Difficulty: ${difficulty.toUpperCase()}`;
         } else {
           wt.textContent = `Player ${winner === 0 ? "1" : "2"} Wins!`;
-          ws.innerHTML = `Score: ${score[0]} – ${score[1]}<br>P1: Mouse &nbsp;|&nbsp; P2: WASD / Arrows`;
+          ws.textContent = `Score: ${score[0]} – ${score[1]} — P1: Mouse | P2: WASD / Arrows`;
         }
         wo.style.display = "block";
       }

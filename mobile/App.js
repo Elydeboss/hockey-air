@@ -11,7 +11,7 @@ import {
 import { WebView } from 'react-native-webview';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
-const SERVER_URL = 'http://hockey-air.onrender.com';
+const SERVER_URL = 'https://hockey-air.onrender.com';
 
 function LoadingScreen() {
   return (

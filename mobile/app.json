@@ -16,7 +16,13 @@
       "bundleIdentifier": "com.airhockey.app",
       "infoPlist": {
         "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": true
+          "NSAllowsArbitraryLoads": false,
+          "NSExceptionDomains": {
+            "hockey-air.onrender.com": {
+              "NSExceptionAllowsInsecureHTTPLoads": false,
+              "NSIncludesSubdomains": true
+            }
+          }
         }
       }
     },

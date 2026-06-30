@@ -11,7 +11,7 @@
     <meta name="theme-color" content="#000000" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/styles.css">
     <style>
       .pick-btn:not(.active-neon):hover {
         border-color: rgba(255, 255, 255, 0.4);
@@ -254,7 +254,6 @@
           vy: 0,
           r: MALLET_R,
           color: "#0f0",
-          glow: "#0f0",
         },
         {
           x: 0,
@@ -265,7 +264,6 @@
           vy: 0,
           r: MALLET_R,
           color: "#f00",
-          glow: "#f00",
         },
       ];
 
@@ -285,7 +283,9 @@
         if (!audioCtx) {
           try {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-          } catch (e) {}
+          } catch (e) {
+            console.warn('Audio init failed:', e);
+          }
         }
       }
       function playTone(freq, dur, type, vol) {
@@ -305,7 +305,9 @@
           gain.connect(audioCtx.destination);
           osc.start();
           osc.stop(audioCtx.currentTime + (dur || 0.1));
-        } catch (e) {}
+        } catch (e) {
+          console.warn('playTone error:', e);
+        }
       }
       function sndWall() {
         playTone(220, 0.07, "square", 0.06);
@@ -425,11 +427,12 @@
         };
         ws.onmessage = (e) => {
           let msg;
-          try {
-            msg = JSON.parse(e.data);
-          } catch {
-            return;
-          }
+            try {
+              msg = JSON.parse(e.data);
+            } catch {
+              console.warn('Invalid WebSocket message');
+              return;
+            }
           handleServerMsg(msg);
         };
       }
@@ -497,7 +500,11 @@
               .classList.remove("hidden");
             break;
           case "room_error":
-            alert(msg.message);
+            document.getElementById("room-status").textContent = msg.message;
+            setTimeout(() => {
+              const el = document.getElementById("room-status");
+              if (el) el.textContent = "";
+            }, 4000);
             showScreen("screen-online");
             break;
         }
@@ -809,7 +816,7 @@
 
         // ── Recalculate target only after reactionDelay frames ──
         if (aiTargetAge === 0 || aiFrameCount % d.reactionDelay === 0) {
-          let rawTx, rawTy;
+          let rawTx = m.x, rawTy = m.y;
 
           // Determine threat: puck on AI's half or moving toward AI?
           let puckInAIHalf = puck.y < H / 2;
@@ -898,8 +905,7 @@
 
         // ── Shot / clear (when in hitting range) ──
         if (distToPuck < m.r + puck.r + 8) {
-          let aimX, aimY;
-          aimY = H - WALL - m.r; // bottom wall (user's goal)
+          let aimX = puck.x, aimY = H - WALL - m.r; // bottom wall (user's goal)
 
           if (difficulty === "pro" || difficulty === "hard") {
             // Aim at a goal corner for tactical placement
@@ -929,7 +935,6 @@
         m.vy = vy;
         m.x = clamp(m.x + vx, WALL + m.r, W - WALL - m.r);
         m.y = clamp(m.y + vy, WALL + m.r, H / 2 - 2);
-        }
       }
 
       function updateMallet(m, i) {
@@ -1056,6 +1061,7 @@
           let m = mallets[i],
             d2 = dist(puck, m);
           if (d2 < puck.r + m.r) {
+            if (d2 < 0.001) d2 = 0.001;
             let nx = (puck.x - m.x) / d2,
               ny = (puck.y - m.y) / d2;
             puck.x += nx * (puck.r + m.r - d2);
@@ -1172,15 +1178,13 @@
         wt.style.textShadow = `0 0 28px ${c}`;
         if (mode === "ai") {
           wt.textContent = winner === 0 ? "You Win!" : "Computer Wins!";
-          ws.innerHTML = `Score: ${score[0]} – ${
-            score[1]
-          }<br>Difficulty: ${difficulty.toUpperCase()}`;
+          ws.textContent = `Score: ${score[0]} – ${score[1]} — Difficulty: ${difficulty.toUpperCase()}`;
         } else if (mode === "online") {
           wt.textContent = winner === playerIndex ? "You Win!" : "You Lose!";
-          ws.innerHTML = `Score: ${score[0]} – ${score[1]}`;
+          ws.textContent = `Score: ${score[0]} – ${score[1]}`;
         } else {
           wt.textContent = `Player ${winner === 0 ? "1" : "2"} Wins!`;
-          ws.innerHTML = `Score: ${score[0]} – ${score[1]}<br>P1: Mouse &nbsp;|&nbsp; P2: WASD / Arrows`;
+          ws.textContent = `Score: ${score[0]} – ${score[1]} — P1: Mouse | P2: WASD / Arrows`;
         }
         wo.classList.remove("hidden");
       }
@@ -1444,6 +1448,8 @@
         if (deferredPrompt) {
           deferredPrompt.prompt();
           deferredPrompt.userChoice.then(() => {
+            deferredPrompt = null;
+          }).catch(() => {
             deferredPrompt = null;
           });
         }

@@ -1,4 +1,13 @@
 node_modules
 
 .env
+.env.local
+.env.production
+.env.development
 .node
+*.pem
+*.key
+*.p12
+*.pfx
+service-account*.json
+credentials*.json

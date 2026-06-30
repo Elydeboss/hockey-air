@@ -24,20 +24,33 @@ const MIME = {
   '.ico': 'image/x-icon',
 };
 
+const PUBLIC_DIR = path.resolve(__dirname, 'public');
+
 const server = http.createServer((req, res) => {
   let urlPath = req.url === '/' ? 'index.html' : req.url;
   // Handle clean URLs (no extension) — try .html
   if (!path.extname(urlPath) && urlPath !== '/sw.js') {
     urlPath += '.html';
   }
-  let filePath = path.join(__dirname, 'public', urlPath);
+  let filePath = path.resolve(path.join(PUBLIC_DIR, urlPath));
+  // Prevent path traversal: ensure resolved path is within public dir
+  if (!filePath.startsWith(PUBLIC_DIR)) {
+    res.writeHead(403); res.end('Forbidden');
+    return;
+  }
   const ext = path.extname(filePath);
   fs.readFile(filePath, (err, data) => {
     if (err) {
       res.writeHead(404); res.end('Not found');
       return;
     }
-    const headers = { 'Content-Type': MIME[ext] || 'application/octet-stream' };
+    const headers = {
+      'Content-Type': MIME[ext] || 'application/octet-stream',
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'Referrer-Policy': 'no-referrer',
+      'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
+    };
     if (req.url === '/sw.js') {
       headers['Cache-Control'] = 'no-cache';
     }
@@ -47,7 +60,18 @@ const server = http.createServer((req, res) => {
 });
 
 // ─── WebSocket Server ──────────────────────────────────────────────
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({
+  server,
+  verifyClient: (info, cb) => {
+    const origin = info.origin || info.req.headers.origin;
+    // Allow connections with no origin (non-browser clients) or from our own domain
+    if (!origin || origin.includes('hockey-air.onrender.com') || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      cb(true);
+    } else {
+      cb(false, 403, 'Forbidden');
+    }
+  },
+});
 
 // ─── Room Management ───────────────────────────────────────────────
 const rooms = new Map();
@@ -208,8 +232,9 @@ class Room {
     // ── Mallet-puck collisions ──
     for (let i = 0; i < 2; i++) {
       const m = s.mallets[i];
-      const d2 = this._dist(p, m);
+      let d2 = this._dist(p, m);
       if (d2 < PUCK_R + MALLET_R) {
+        if (d2 < 0.001) d2 = 0.001;
         const nx = (p.x - m.x) / d2;
         const ny = (p.y - m.y) / d2;
         p.x += nx * (PUCK_R + MALLET_R - d2);
@@ -320,7 +345,8 @@ wss.on('connection', (ws) => {
       case 'create_room': {
         if (currentRoom) return;
         const code = generateCode();
-        const room = new Room(code, msg.winning || 7);
+        const winning = Math.max(1, Math.min(99, msg.winning || 7));
+        const room = new Room(code, winning);
         room.players[0] = ws;
         rooms.set(code, room);
         roomCodes.add(code);

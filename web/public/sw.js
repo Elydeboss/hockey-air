@@ -1,13 +1,14 @@
-const CACHE = "air-hockey-v1";
+const CACHE = "air-hockey-v2-offline";
 
 const PRECACHE = [
   "/",
   "/index.html",
-  "/game",
   "/game.html",
+  "/styles.css",
   "/manifest.json",
   "/icons/icon-192x192.png",
   "/icons/icon-512x512.png",
+  "/favicon.ico",
 ];
 
 self.addEventListener("install", (e) => {

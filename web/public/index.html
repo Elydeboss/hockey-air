@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#000000" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/styles.css">
 <style>
 .pick-btn:not(.active-neon):hover { border-color: rgba(255,255,255,0.4); color: #fff; }
 .active-neon { border-color: #ff0 !important; color: #ff0 !important; text-shadow: 0 0 8px #ff0; }
@@ -100,7 +100,7 @@ let deferredPrompt = null;
 function installApp() {
   if (deferredPrompt) {
     deferredPrompt.prompt();
-    deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+    deferredPrompt.userChoice.then(() => { deferredPrompt = null; }).catch(() => { deferredPrompt = null; });
   }
 }
 window.addEventListener('beforeinstallprompt', (e) => {
