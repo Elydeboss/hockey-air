@@ -48,7 +48,7 @@
     <!-- Online lobby -->
     <div
       id="overlay"
-      class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-white min-w-[300px] z-10"
+      class="absolute inset-0 flex items-center justify-center bg-black/70 text-center text-white min-w-[300px] z-10"
     >
       <div id="screen-online" class="hidden">
         <h1 class="text-base mb-1">ONLINE MULTIPLAYER</h1>
@@ -274,6 +274,7 @@
 
       // Online
       let ws = null;
+      let connecting = false;
       let playerIndex = 0;
       let roomCode = "";
 
@@ -393,16 +394,20 @@
 
       // ─── Online Multiplayer ────────────────────────────────────────────
       function onlineConnect(onOpen) {
+        if (connecting) return;
         if (ws && ws.readyState === WebSocket.OPEN) {
           if (onOpen) onOpen();
           return;
         }
+        connecting = true;
         const host = window.env.WS_SERVER || "localhost:3000";
         const proto = location.protocol === "https:" ? "wss:" : "ws:";
         ws = new WebSocket(`${proto}//${host}`);
         const timeout = setTimeout(() => {
           if (ws && ws.readyState !== WebSocket.OPEN) {
             ws.close();
+            ws = null;
+            connecting = false;
             document.getElementById("room-code-display").textContent = "ERR";
             document.getElementById("room-status").textContent =
               "Connection timed out.";
@@ -410,19 +415,25 @@
         }, 5000);
         ws.onopen = () => {
           clearTimeout(timeout);
+          connecting = false;
           document.getElementById("room-status").textContent = "";
           if (onOpen) onOpen();
         };
         ws.onerror = () => {
+          connecting = false;
           document.getElementById("room-code-display").textContent = "ERR";
           document.getElementById("room-status").textContent =
             "Connection failed. Check that the server is running.";
         };
         ws.onclose = () => {
+          connecting = false;
           if (gameActive && mode === "online") {
             document
               .getElementById("disconnect-overlay")
               .classList.remove("hidden");
+          } else if (mode === "online") {
+            document.getElementById("room-status").textContent =
+              "Connection lost.";
           }
         };
         ws.onmessage = (e) => {
@@ -460,6 +471,7 @@
       }
 
       function onlineCancel() {
+        connecting = false;
         if (ws) {
           ws.close();
           ws = null;
@@ -500,6 +512,10 @@
               .classList.remove("hidden");
             break;
           case "room_error":
+            if (ws) {
+              ws.close();
+              ws = null;
+            }
             document.getElementById("room-status").textContent = msg.message;
             setTimeout(() => {
               const el = document.getElementById("room-status");
@@ -626,6 +642,7 @@
 
       function mainMenu() {
         if (mode === "online" && ws) {
+          connecting = false;
           ws.close();
           ws = null;
         }
@@ -1269,7 +1286,7 @@
         let fs = Math.round(W * 0.1);
         ctx.font = `bold ${fs}px monospace`;
         ctx.textAlign = "center";
-        ["#f00", "#0f0"].forEach((c, i) => {
+        ["#0f0", "#f00"].forEach((c, i) => {
           let pop =
             scorePopTimer[i] > 0 ? 1 + (scorePopTimer[i] / 20) * 0.4 : 1;
           ctx.save();
